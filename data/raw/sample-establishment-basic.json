@@ -1,0 +1,257 @@
+{
+  "response": {
+    "header": {
+      "resultCode": "00",
+      "resultMsg": "NORMAL_CODE"
+    },
+    "body": {
+      "items": {
+        "item": [
+          {
+            "bzowrRgstNo": "620880****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "110",
+            "seq": 6926309,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오페이손해보험",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "589860****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "11",
+            "ldongAddrMgplSgguCd": "650",
+            "ldongAddrMgplSgguEmdCd": "108",
+            "seq": 6918281,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오토허프로",
+            "wkplRoadNmDtlAddr": "서울특별시 서초구 남부순환로337가길",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "741810****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "109",
+            "seq": 6866765,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오엔터프라이즈",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "341880****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "50",
+            "ldongAddrMgplSgguCd": "110",
+            "ldongAddrMgplSgguEmdCd": "104",
+            "seq": 6833865,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오패밀리",
+            "wkplRoadNmDtlAddr": "제주특별자치도 제주시 중앙로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "375880****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "110",
+            "seq": 6781598,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오뱅크",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 분당내곡로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "144811****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "110",
+            "seq": 6733388,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오게임즈",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "144810****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "109",
+            "seq": 6705918,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오브이엑스(KAKAOVX)",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교로255번길",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "214889****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "109",
+            "seq": 6702574,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오스타일 (Kakao Style Corp.)",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "220880****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "109",
+            "seq": 6679447,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오엔터테인먼트",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "220876****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "110",
+            "seq": 6630154,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오페이증권",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "120814****",
+            "dataCrtYm": "202605",
+            "ldongAddrMgplDgCd": "50",
+            "ldongAddrMgplSgguCd": "110",
+            "ldongAddrMgplSgguEmdCd": "136",
+            "seq": 6567261,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오",
+            "wkplRoadNmDtlAddr": "제주특별자치도 제주시 첨단로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "620880****",
+            "dataCrtYm": "202604",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "110",
+            "seq": 6336571,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오페이손해보험",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "589860****",
+            "dataCrtYm": "202604",
+            "ldongAddrMgplDgCd": "11",
+            "ldongAddrMgplSgguCd": "650",
+            "ldongAddrMgplSgguEmdCd": "108",
+            "seq": 6328269,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오토허프로",
+            "wkplRoadNmDtlAddr": "서울특별시 서초구 남부순환로337가길",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "741810****",
+            "dataCrtYm": "202604",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "109",
+            "seq": 6275964,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오엔터프라이즈",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "341880****",
+            "dataCrtYm": "202604",
+            "ldongAddrMgplDgCd": "50",
+            "ldongAddrMgplSgguCd": "110",
+            "ldongAddrMgplSgguEmdCd": "104",
+            "seq": 6243046,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오패밀리",
+            "wkplRoadNmDtlAddr": "제주특별자치도 제주시 중앙로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "375880****",
+            "dataCrtYm": "202604",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "110",
+            "seq": 6189515,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오뱅크",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 분당내곡로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "144811****",
+            "dataCrtYm": "202604",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "110",
+            "seq": 6141268,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오게임즈",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "144810****",
+            "dataCrtYm": "202604",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "109",
+            "seq": 6113802,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오브이엑스(KAKAOVX)",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교로255번길",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "214889****",
+            "dataCrtYm": "202604",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "109",
+            "seq": 6110428,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오스타일 (Kakao Style Corp.)",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          },
+          {
+            "bzowrRgstNo": "220880****",
+            "dataCrtYm": "202604",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "109",
+            "seq": 6087066,
+            "wkplJnngStcd": "1",
+            "wkplNm": "주식회사 카카오엔터테인먼트",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로",
+            "wkplStylDvcd": "1"
+          }
+        ]
+      },
+      "pageNo": 1,
+      "numOfRows": 20,
+      "totalCount": 141
+    }
+  }
+}

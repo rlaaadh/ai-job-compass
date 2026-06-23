@@ -1,0 +1,57 @@
+{
+  "response": {
+    "header": {
+      "resultCode": "00",
+      "resultMsg": "NORMAL_CODE"
+    },
+    "body": {
+      "items": {
+        "item": [
+          {
+            "bzowrRgstNo": "354860****",
+            "dataCrtYm": "202406",
+            "ldongAddrMgplDgCd": "41",
+            "ldongAddrMgplSgguCd": "135",
+            "ldongAddrMgplSgguEmdCd": "109",
+            "seq": 1193841,
+            "wkplNm": "주식회사 카카오스페이스",
+            "wkplRoadNmDtlAddr": "경기도 성남시 분당구 판교역로"
+          },
+          {
+            "bzowrRgstNo": "193870****",
+            "dataCrtYm": "202303",
+            "ldongAddrMgplDgCd": "11",
+            "ldongAddrMgplSgguCd": "320",
+            "ldongAddrMgplSgguEmdCd": "108",
+            "seq": 1090381,
+            "wkplNm": "주식회사 카카오토카",
+            "wkplRoadNmDtlAddr": "서울특별시 도봉구 도봉로"
+          },
+          {
+            "bzowrRgstNo": "819870****",
+            "dataCrtYm": "201903",
+            "ldongAddrMgplDgCd": "29",
+            "ldongAddrMgplSgguCd": "110",
+            "ldongAddrMgplSgguEmdCd": "122",
+            "seq": 476860,
+            "wkplNm": "주식회사 카카오",
+            "wkplRoadNmDtlAddr": "광주광역시 동구 의재로"
+          },
+          {
+            "bzowrRgstNo": "410864****",
+            "dataCrtYm": "201803",
+            "ldongAddrMgplDgCd": "29",
+            "ldongAddrMgplSgguCd": "140",
+            "ldongAddrMgplSgguEmdCd": "132",
+            "seq": 328737,
+            "wkplNm": "주식회사 카카오토(Kaka auto)",
+            "wkplRoadNmDtlAddr": "광주광역시 서구 매월1로62번길"
+          }
+        ]
+      },
+      "pageNo": 1,
+      "numOfRows": 5,
+      "totalCount": 4
+    }
+  }
+}

@@ -134,3 +134,9 @@ AI가 수치를 사람이 이해하기 쉬운 자연어로 해석한다.
 
 ※ 추정 연봉은 국민연금 데이터를 기반으로 계산된 참고용 정보이며 실제 연봉과 차이가 있을 수 있음
 
+<br/>
+<br/>
+
+# 개발 시작
+국민연금 OpenAPI 키를 발급받았다면 [docs/api-quickstart.md](/Users/hailey/git/개인스터디/ai-job-compass/docs/api-quickstart.md) 문서를 따라
+기본 조회, 상세 조회, 기간별 조회를 바로 테스트할 수 있다.

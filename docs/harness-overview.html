@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 이직 나침반 — 하네스 구조도</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --plan-primary: #7c3aed;
+      --plan-light: #ede9fe;
+      --plan-border: #c4b5fd;
+      --plan-accent: #5b21b6;
+      --build-primary: #0d9488;
+      --build-light: #ccfbf1;
+      --build-border: #5eead4;
+      --build-accent: #0f766e;
+      --skill-bg: #fff7ed;
+      --skill-border: #fed7aa;
+      --skill-text: #c2410c;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --tag-bg: #f1f5f9;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: white;
+      padding: 40px 48px 32px;
+    }
+    .header-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+    .header h1 span { color: #94a3b8; font-weight: 400; font-size: 18px; display: block; margin-top: 4px; }
+    .header-meta { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 24px; }
+    .stat-chip {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 10px 18px;
+      text-align: center;
+    }
+    .stat-chip .num { font-size: 22px; font-weight: 700; color: #e2e8f0; }
+    .stat-chip .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    /* ── Section ── */
+    .section { padding: 40px 48px; }
+    .section + .section { padding-top: 0; }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    /* ── Pipeline Block ── */
+    .pipeline-block {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+    .pipeline-header {
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pipeline-header.plan { background: var(--plan-light); border-bottom-color: var(--plan-border); }
+    .pipeline-header.build { background: var(--build-light); border-bottom-color: var(--build-border); }
+
+    .skill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .skill-badge.plan { background: var(--plan-light); color: var(--plan-accent); border-color: var(--plan-border); }
+    .skill-badge.build { background: var(--build-light); color: var(--build-accent); border-color: var(--build-border); }
+    .skill-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .skill-badge.plan .dot { background: var(--plan-primary); }
+    .skill-badge.build .dot { background: var(--build-primary); }
+
+    .pipeline-info { flex: 1; }
+    .pipeline-info h2 { font-size: 16px; font-weight: 700; }
+    .pipeline-info h2 .code { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; }
+    .pipeline-info p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+    .trigger-badge {
+      font-size: 11px;
+      background: var(--skill-bg);
+      border: 1px solid var(--skill-border);
+      color: var(--skill-text);
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-weight: 600;
+    }
+
+    /* ── Flow ── */
+    .flow-container {
+      padding: 24px;
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .flow-node {
+      flex: 1;
+      min-width: 160px;
+      max-width: 220px;
+      display: flex;
+      flex-direction: column;
+    }
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .flow-arrow svg { width: 20px; height: 20px; }
+    .flow-card {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      height: 100%;
+      transition: box-shadow 0.15s;
+      cursor: default;
+    }
+    .flow-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .flow-card.plan { border-color: var(--plan-border); background: linear-gradient(160deg, #faf5ff 0%, #ede9fe 100%); }
+    .flow-card.build { border-color: var(--build-border); background: linear-gradient(160deg, #f0fdfa 0%, #ccfbf1 100%); }
+
+    .flow-card-phase {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .flow-card-phase.plan { color: var(--plan-primary); }
+    .flow-card-phase.build { color: var(--build-primary); }
+
+    .flow-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .flow-card p { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+    .flow-card-output {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+    .output-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .output-path {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 11px;
+      color: #475569;
+      background: rgba(255,255,255,0.6);
+      border-radius: 4px;
+      padding: 2px 6px;
+      display: inline-block;
+      margin: 1px 0;
+    }
+
+    /* ── Agent Detail Cards ── */
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+    .agent-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .agent-card-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .agent-card-header.plan { background: var(--plan-light); border-bottom-color: var(--plan-border); }
+    .agent-card-header.build { background: var(--build-light); border-bottom-color: var(--build-border); }
+
+    .agent-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .agent-icon.plan { background: var(--plan-primary); }
+    .agent-icon.build { background: var(--build-primary); }
+
+    .agent-card-header h3 { font-size: 15px; font-weight: 700; }
+    .agent-card-header h3 span {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--muted);
+      display: block;
+      margin-top: 1px;
+    }
+
+    .agent-card-body { padding: 16px 20px; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 7px;
+      margin-top: 14px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    .role-text { font-size: 13px; color: #334155; line-height: 1.55; }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: 11px;
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      color: #475569;
+      border-radius: 5px;
+      padding: 3px 9px;
+    }
+    .tag.plan { background: #faf5ff; border-color: var(--plan-border); color: var(--plan-accent); }
+    .tag.build { background: #f0fdfa; border-color: var(--build-border); color: var(--build-accent); }
+    .tag.code { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 10.5px; }
+
+    .score-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+    .score-table th {
+      background: var(--tag-bg);
+      text-align: left;
+      padding: 5px 8px;
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .score-table td { padding: 5px 8px; border-bottom: 1px solid #f1f5f9; }
+    .score-table tr:last-child td { border-bottom: none; }
+    .score-pts { font-weight: 700; color: var(--build-accent); }
+
+    .endpoints-list { font-size: 12px; }
+    .endpoint-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .endpoint-row:last-child { border-bottom: none; }
+    .method-badge {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .method-get { background: #dcfce7; color: #15803d; }
+    .method-post { background: #fef3c7; color: #92400e; }
+    .endpoint-path {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 11px;
+      color: #334155;
+      flex: 1;
+    }
+    .endpoint-desc { font-size: 11px; color: var(--muted); }
+
+    /* ── Relations ── */
+    .relation-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .relation-table th {
+      background: #f1f5f9;
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      border-bottom: 2px solid var(--border);
+    }
+    .relation-table td { padding: 11px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .relation-table tr:last-child td { border-bottom: none; }
+    .relation-table tr:hover td { background: #fafafa; }
+    .rel-skill { font-weight: 600; font-size: 12px; }
+    .rel-skill.plan { color: var(--plan-accent); }
+    .rel-skill.build { color: var(--build-accent); }
+    .agent-pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 100px;
+      padding: 3px 10px;
+      margin: 2px 2px;
+    }
+    .agent-pill.plan { background: #ede9fe; color: var(--plan-accent); }
+    .agent-pill.build { background: #ccfbf1; color: var(--build-accent); }
+
+    .flow-step {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .flow-step .arrow { color: #94a3b8; }
+
+    /* ── Notes ── */
+    .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .note-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      border-left: 3px solid;
+    }
+    .note-card.warning { border-left-color: #f59e0b; }
+    .note-card.info { border-left-color: #3b82f6; }
+    .note-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .note-card p { font-size: 12px; color: var(--muted); line-height: 1.55; }
+    .note-card code {
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 11px;
+      background: var(--tag-bg);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      background: #f1f5f9;
+      border-top: 1px solid var(--border);
+      padding: 20px 48px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .header, .section, .footer { padding-left: 20px; padding-right: 20px; }
+      .flow-container { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); justify-content: center; }
+      .agents-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════ HEADER ════ -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>AI 이직 나침반<span>하네스 구조도 — 에이전트 & 스킬 관계도</span></h1>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="stat-chip"><div class="num">6</div><div class="label">에이전트</div></div>
+    <div class="stat-chip"><div class="num">2</div><div class="label">오케스트레이터 스킬</div></div>
+    <div class="stat-chip"><div class="num">2</div><div class="label">실행 단계</div></div>
+    <div class="stat-chip"><div class="num">Opus</div><div class="label">모델 (전 에이전트)</div></div>
+  </div>
+</div>
+
+<!-- ════ PIPELINE: 기획 ════ -->
+<div class="section">
+  <div class="section-title">실행 흐름 — 파이프라인 구조</div>
+
+  <!-- Plan Pipeline -->
+  <div class="pipeline-block">
+    <div class="pipeline-header plan">
+      <div class="skill-badge plan">
+        <span class="dot"></span>
+        plan-job-compass
+      </div>
+      <div class="pipeline-info">
+        <h2>기획 파이프라인</h2>
+        <p>구현 전 단계 — 제품 기획 → 기술 설계 순서로 문서를 생성한다</p>
+      </div>
+      <div class="trigger-badge">트리거: "기획해줘", "스펙 작성", "설계해줘"</div>
+    </div>
+    <div class="flow-container">
+      <!-- Orchestrator -->
+      <div class="flow-node">
+        <div class="flow-card plan">
+          <div class="flow-card-phase plan">🎯 오케스트레이터</div>
+          <h3>plan-job-compass</h3>
+          <p>스킬. 두 에이전트를 순차 호출하고 결과를 취합한다.</p>
+          <div class="flow-card-output">
+            <div class="output-label">Phase 0 감지</div>
+            <span class="output-path">초기 / 부분 재실행</span>
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+      <!-- product-planner -->
+      <div class="flow-node">
+        <div class="flow-card plan">
+          <div class="flow-card-phase plan">Phase 1</div>
+          <h3>product-planner</h3>
+          <p>PRD, 사용자 스토리, MVP 범위 정의</p>
+          <div class="flow-card-output">
+            <div class="output-label">산출물</div>
+            <span class="output-path">docs/product/prd.md</span><br/>
+            <span class="output-path">docs/product/user-stories.md</span>
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+      <!-- tech-architect -->
+      <div class="flow-node">
+        <div class="flow-card plan">
+          <div class="flow-card-phase plan">Phase 2</div>
+          <h3>tech-architect</h3>
+          <p>기술 스택, 아키텍처, API 스펙, DB 스키마</p>
+          <div class="flow-card-output">
+            <div class="output-label">산출물</div>
+            <span class="output-path">docs/tech/architecture.md</span><br/>
+            <span class="output-path">docs/tech/api-spec.md</span><br/>
+            <span class="output-path">docs/tech/db-schema.md</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Build Pipeline -->
+  <div class="pipeline-block">
+    <div class="pipeline-header build">
+      <div class="skill-badge build">
+        <span class="dot"></span>
+        build-job-compass
+      </div>
+      <div class="pipeline-info">
+        <h2>개발 파이프라인</h2>
+        <p>구현 단계 — 데이터 → 점수 → AI 분석 → 백엔드 순서로 코드를 생성한다</p>
+      </div>
+      <div class="trigger-badge">트리거: "개발 시작해줘", "구현해줘", "빌드해줘"</div>
+    </div>
+    <div class="flow-container">
+      <!-- Orchestrator -->
+      <div class="flow-node">
+        <div class="flow-card build">
+          <div class="flow-card-phase build">🎯 오케스트레이터</div>
+          <h3>build-job-compass</h3>
+          <p>스킬. 4개 에이전트를 순차 호출하고 인터페이스를 연결한다.</p>
+          <div class="flow-card-output">
+            <div class="output-label">Phase 0 감지</div>
+            <span class="output-path">초기 / 부분 재실행</span>
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+      <!-- data-pipeline -->
+      <div class="flow-node">
+        <div class="flow-card build">
+          <div class="flow-card-phase build">Phase 1</div>
+          <h3>data-pipeline</h3>
+          <p>NPS API 클라이언트, DB 스키마, ETL</p>
+          <div class="flow-card-output">
+            <div class="output-label">산출물</div>
+            <span class="output-path">data/raw/*.json</span><br/>
+            <span class="output-path">src/db/</span><br/>
+            <span class="output-path">src/pipeline/</span>
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+      <!-- score-engine -->
+      <div class="flow-node">
+        <div class="flow-card build">
+          <div class="flow-card-phase build">Phase 2</div>
+          <h3>score-engine</h3>
+          <p>룰 기반 건강도 · 이직 추천도 점수 엔진</p>
+          <div class="flow-card-output">
+            <div class="output-label">산출물</div>
+            <span class="output-path">src/scoring/</span>
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+      <!-- ai-analyst -->
+      <div class="flow-node">
+        <div class="flow-card build">
+          <div class="flow-card-phase build">Phase 3</div>
+          <h3>ai-analyst</h3>
+          <p>Claude Haiku로 점수 → 자연어 해석 리포트</p>
+          <div class="flow-card-output">
+            <div class="output-label">산출물</div>
+            <span class="output-path">src/ai/</span>
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+      <!-- backend -->
+      <div class="flow-node">
+        <div class="flow-card build">
+          <div class="flow-card-phase build">Phase 4</div>
+          <h3>backend</h3>
+          <p>FastAPI 서버, 3개 엔드포인트 통합</p>
+          <div class="flow-card-output">
+            <div class="output-label">산출물</div>
+            <span class="output-path">src/main.py</span><br/>
+            <span class="output-path">src/api/</span><br/>
+            <span class="output-path">requirements.txt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ AGENT DETAIL CARDS ════ -->
+<div class="section">
+  <div class="section-title">에이전트 상세</div>
+  <div class="agents-grid">
+
+    <!-- product-planner -->
+    <div class="agent-card">
+      <div class="agent-card-header plan">
+        <div class="agent-icon plan">📋</div>
+        <div>
+          <h3>product-planner<span>.claude/agents/product-planner.md</span></h3>
+        </div>
+        <div style="margin-left:auto"><span class="tag plan">기획</span></div>
+      </div>
+      <div class="agent-card-body">
+        <div class="section-label">핵심 역할</div>
+        <p class="role-text">README의 기능 아이디어를 구현 가능한 명세로 다듬는다. MVP 범위를 명확히 정의하고 사용자 스토리를 작성한다.</p>
+
+        <div class="section-label">입력</div>
+        <div class="tag-list">
+          <span class="tag code">README.md</span>
+          <span class="tag">오케스트레이터 지시</span>
+        </div>
+
+        <div class="section-label">출력 산출물</div>
+        <div class="tag-list">
+          <span class="tag code">docs/product/prd.md</span>
+          <span class="tag code">docs/product/user-stories.md</span>
+        </div>
+
+        <div class="section-label">작업 원칙</div>
+        <div class="tag-list">
+          <span class="tag">포트폴리오 목적 전제</span>
+          <span class="tag">MVP 1-2개 핵심 기능 집중</span>
+          <span class="tag">당월고지금액 한계 명시</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- tech-architect -->
+    <div class="agent-card">
+      <div class="agent-card-header plan">
+        <div class="agent-icon plan">🏗️</div>
+        <div>
+          <h3>tech-architect<span>.claude/agents/tech-architect.md</span></h3>
+        </div>
+        <div style="margin-left:auto"><span class="tag plan">기획</span></div>
+      </div>
+      <div class="agent-card-body">
+        <div class="section-label">핵심 역할</div>
+        <p class="role-text">product-planner의 기획을 받아 기술 구현 계획을 수립한다. 기술 스택 선정, 아키텍처, API 스펙, DB 스키마를 설계한다. build 단계 에이전트들이 이 문서를 참조한다.</p>
+
+        <div class="section-label">입력</div>
+        <div class="tag-list">
+          <span class="tag code">docs/product/prd.md</span>
+          <span class="tag code">scripts/test_nps_api.py</span>
+        </div>
+
+        <div class="section-label">출력 산출물</div>
+        <div class="tag-list">
+          <span class="tag code">docs/tech/architecture.md</span>
+          <span class="tag code">docs/tech/api-spec.md</span>
+          <span class="tag code">docs/tech/db-schema.md</span>
+        </div>
+
+        <div class="section-label">작업 원칙</div>
+        <div class="tag-list">
+          <span class="tag">MVP 최소 기술 스택</span>
+          <span class="tag">NPS 필드 매핑 포함</span>
+          <span class="tag">당월고지금액 컬럼명 명시</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- data-pipeline -->
+    <div class="agent-card">
+      <div class="agent-card-header build">
+        <div class="agent-icon build">🔌</div>
+        <div>
+          <h3>data-pipeline<span>.claude/agents/data-pipeline.md</span></h3>
+        </div>
+        <div style="margin-left:auto"><span class="tag build">개발</span></div>
+      </div>
+      <div class="agent-card-body">
+        <div class="section-label">핵심 역할</div>
+        <p class="role-text">국민연금공단 공공 API에서 기업 데이터를 수집·정제하여 DB에 저장하는 파이프라인을 구현한다. 기존 test 스크립트를 클래스 기반 클라이언트로 리팩토링한다.</p>
+
+        <div class="section-label">입력</div>
+        <div class="tag-list">
+          <span class="tag code">scripts/test_nps_api.py</span>
+          <span class="tag code">NPS_API_KEY</span>
+        </div>
+
+        <div class="section-label">출력 산출물</div>
+        <div class="tag-list">
+          <span class="tag code">data/raw/*.json</span>
+          <span class="tag code">src/db/schema.sql</span>
+          <span class="tag code">src/db/models.py</span>
+          <span class="tag code">src/pipeline/nps_client.py</span>
+          <span class="tag code">src/pipeline/etl.py</span>
+        </div>
+
+        <div class="section-label">에러 핸들링</div>
+        <div class="tag-list">
+          <span class="tag">API 실패 시 1회 재시도</span>
+          <span class="tag">빈 응답 정상 처리</span>
+          <span class="tag">SQLite (MVP, PG는 추후)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- score-engine -->
+    <div class="agent-card">
+      <div class="agent-card-header build">
+        <div class="agent-icon build">📊</div>
+        <div>
+          <h3>score-engine<span>.claude/agents/score-engine.md</span></h3>
+        </div>
+        <div style="margin-left:auto"><span class="tag build">개발</span></div>
+      </div>
+      <div class="agent-card-body">
+        <div class="section-label">핵심 역할</div>
+        <p class="role-text">순수 룰 기반으로 기업 건강도(100점)와 이직 추천도를 계산한다. AI는 이 단계에 관여하지 않는다.</p>
+
+        <div class="section-label">점수 배점 (100점 만점)</div>
+        <table class="score-table">
+          <tr><th>항목</th><th>배점</th><th>기준</th></tr>
+          <tr><td>성장성</td><td><span class="score-pts">35점</span></td><td>직원 증감률, 입사/퇴사 비율</td></tr>
+          <tr><td>안정성</td><td><span class="score-pts">30점</span></td><td>이직률, 장기 고용 패턴</td></tr>
+          <tr><td>채용 활성도</td><td><span class="score-pts">15점</span></td><td>신규 취득자 비율</td></tr>
+          <tr><td>규모 적합성</td><td><span class="score-pts">10점</span></td><td>조직 규모 변화 패턴</td></tr>
+          <tr><td>연봉 추정</td><td><span class="score-pts">10점</span></td><td>당월고지금액 (참고값)</td></tr>
+          <tr><td>리스크 패널티</td><td style="color:#ef4444;font-weight:700">감점</td><td>탈퇴 이력, 급격한 인원 감소</td></tr>
+        </table>
+
+        <div class="section-label">출력 산출물</div>
+        <div class="tag-list">
+          <span class="tag code">src/scoring/health_score.py</span>
+          <span class="tag code">src/scoring/recommendation.py</span>
+          <span class="tag code">src/scoring/schemas.py</span>
+          <span class="tag code">src/scoring/tests/</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ai-analyst -->
+    <div class="agent-card">
+      <div class="agent-card-header build">
+        <div class="agent-icon build">🤖</div>
+        <div>
+          <h3>ai-analyst<span>.claude/agents/ai-analyst.md</span></h3>
+        </div>
+        <div style="margin-left:auto"><span class="tag build">개발</span></div>
+      </div>
+      <div class="agent-card-body">
+        <div class="section-label">핵심 역할</div>
+        <p class="role-text">score-engine의 점수 결과를 받아 Claude API로 자연어 분석 리포트를 생성하는 모듈을 구현한다. AI는 점수를 계산하지 않고, <strong>"왜 이 점수인지 해석"</strong>만 담당한다.</p>
+
+        <div class="section-label">Claude API 설정</div>
+        <div class="tag-list">
+          <span class="tag code">claude-haiku-4-5-20251001</span>
+          <span class="tag code">ANTHROPIC_API_KEY</span>
+          <span class="tag">리포트: 2-3문장 요약</span>
+        </div>
+
+        <div class="section-label">출력 산출물</div>
+        <div class="tag-list">
+          <span class="tag code">src/ai/report_generator.py</span>
+          <span class="tag code">src/ai/prompts.py</span>
+          <span class="tag code">src/ai/schemas.py</span>
+        </div>
+
+        <div class="section-label">에러 핸들링</div>
+        <div class="tag-list">
+          <span class="tag">API 실패 시 기본 텍스트 반환 (서비스 중단 없음)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- backend -->
+    <div class="agent-card">
+      <div class="agent-card-header build">
+        <div class="agent-icon build">⚡</div>
+        <div>
+          <h3>backend<span>.claude/agents/backend.md</span></h3>
+        </div>
+        <div style="margin-left:auto"><span class="tag build">개발</span></div>
+      </div>
+      <div class="agent-card-body">
+        <div class="section-label">핵심 역할</div>
+        <p class="role-text">FastAPI를 사용하여 이전 3개 에이전트의 모듈을 통합하고, 사용 가능한 API 서버를 완성한다.</p>
+
+        <div class="section-label">API 엔드포인트</div>
+        <div class="endpoints-list">
+          <div class="endpoint-row">
+            <span class="method-badge method-get">GET</span>
+            <span class="endpoint-path">/companies/search?name={name}</span>
+          </div>
+          <div class="endpoint-row">
+            <span class="method-badge method-get">GET</span>
+            <span class="endpoint-path">/companies/{seq}/health</span>
+          </div>
+          <div class="endpoint-row">
+            <span class="method-badge method-post">POST</span>
+            <span class="endpoint-path">/compare</span>
+            <span class="endpoint-desc">이직 추천도</span>
+          </div>
+        </div>
+
+        <div class="section-label">출력 산출물</div>
+        <div class="tag-list">
+          <span class="tag code">src/main.py</span>
+          <span class="tag code">src/api/routers/</span>
+          <span class="tag code">src/api/schemas.py</span>
+          <span class="tag code">requirements.txt</span>
+        </div>
+
+        <div class="section-label">MVP 제약</div>
+        <div class="tag-list">
+          <span class="tag">인증 없음</span>
+          <span class="tag">캐싱 없음</span>
+          <span class="tag">CORS 포함</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════ RELATIONS TABLE ════ -->
+<div class="section">
+  <div class="section-title">스킬 ↔ 에이전트 관계</div>
+  <div class="pipeline-block">
+    <table class="relation-table">
+      <thead>
+        <tr>
+          <th>스킬 (오케스트레이터)</th>
+          <th>에이전트 (실행 순서)</th>
+          <th>데이터 흐름</th>
+          <th>최종 산출물 위치</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="rel-skill plan">plan-job-compass</span></td>
+          <td>
+            <span class="agent-pill plan">① product-planner</span>
+            <span class="agent-pill plan">② tech-architect</span>
+          </td>
+          <td>
+            <span class="flow-step">
+              README.md
+              <span class="arrow">→</span>
+              PRD
+              <span class="arrow">→</span>
+              기술 스펙
+            </span>
+          </td>
+          <td><span class="tag code">docs/product/</span> <span class="tag code">docs/tech/</span></td>
+        </tr>
+        <tr>
+          <td><span class="rel-skill build">build-job-compass</span></td>
+          <td>
+            <span class="agent-pill build">① data-pipeline</span>
+            <span class="agent-pill build">② score-engine</span>
+            <span class="agent-pill build">③ ai-analyst</span>
+            <span class="agent-pill build">④ backend</span>
+          </td>
+          <td>
+            <span class="flow-step">
+              NPS API
+              <span class="arrow">→</span>
+              DB 모델
+              <span class="arrow">→</span>
+              점수 스키마
+              <span class="arrow">→</span>
+              리포트
+              <span class="arrow">→</span>
+              FastAPI
+            </span>
+          </td>
+          <td><span class="tag code">src/</span> <span class="tag code">data/raw/</span> <span class="tag code">requirements.txt</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ NOTES ════ -->
+<div class="section">
+  <div class="section-title">주의사항 & 설계 결정</div>
+  <div class="notes-grid">
+
+    <div class="note-card warning">
+      <h4>⚠️ 당월고지금액 제약</h4>
+      <p>국민연금 연금 보험료 고지 기준이므로 실제 급여와 다릅니다. 모든 에이전트에서 <code>estimated_salary_signal</code> 등 "참고값" 임을 명시합니다.</p>
+    </div>
+
+    <div class="note-card warning">
+      <h4>⚠️ 탈퇴 사업장 해석</h4>
+      <p><code>withdrawn_companies</code> 데이터는 "폐업 신호"가 아닌 "리스크 보조 지표"로만 활용합니다. 탈퇴 = 망한 회사가 아닙니다.</p>
+    </div>
+
+    <div class="note-card info">
+      <h4>ℹ️ AI 역할 분리</h4>
+      <p>AI (claude-haiku)는 점수 <strong>계산에 관여하지 않습니다</strong>. 점수는 순수 룰 기반 (<code>score-engine</code>), AI는 "왜 이 점수인지 설명"만 담당합니다.</p>
+    </div>
+
+    <div class="note-card info">
+      <h4>ℹ️ 권장 실행 순서</h4>
+      <p>기획 먼저 → 구현 나중. <code>plan-job-compass</code>로 <code>docs/tech/</code>를 먼저 생성하면 <code>build-job-compass</code>가 이를 참조하여 더 정확하게 구현합니다.</p>
+    </div>
+
+    <div class="note-card info">
+      <h4>ℹ️ 부분 재실행 지원</h4>
+      <p>기존 산출물이 있는 상태에서 "점수 엔진만 수정해줘"처럼 요청하면 해당 Phase만 재실행합니다. 전체를 처음부터 다시 실행하지 않습니다.</p>
+    </div>
+
+    <div class="note-card info">
+      <h4>ℹ️ MVP 범위</h4>
+      <p>인증, 캐싱, 레이트 리밋, PostgreSQL 마이그레이션은 MVP 범위 밖입니다. <code>backend</code> 에이전트는 SQLite + 직접 API 호출 방식으로 먼저 구현합니다.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════ FOOTER ════ -->
+<div class="footer">
+  <span>AI 이직 나침반 — 하네스 구조도</span>
+  <span>에이전트 6개 · 스킬 2개 · 모두 model: opus · 최종 업데이트 2026-06-23</span>
+</div>
+
+</body>
+</html>

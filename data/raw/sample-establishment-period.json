@@ -1,0 +1,21 @@
+{
+  "response": {
+    "header": {
+      "resultCode": "00",
+      "resultMsg": "NORMAL_CODE"
+    },
+    "body": {
+      "items": {
+        "item": [
+          {
+            "lssJnngpCnt": 49,
+            "nwAcqzrCnt": 36
+          }
+        ]
+      },
+      "pageNo": 1,
+      "numOfRows": 20,
+      "totalCount": 1
+    }
+  }
+}
