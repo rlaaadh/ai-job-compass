@@ -27,15 +27,6 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* 로딩 바 */
-@keyframes loading-slide {
-  0% { transform: translateX(-150%); }
-  100% { transform: translateX(350%); }
-}
-.loading-bar-thumb {
-  animation: loading-slide 1.2s ease-in-out infinite;
-}
-
 /* 스크롤바 (webkit) */
 ::-webkit-scrollbar {
   width: 10px;

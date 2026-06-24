@@ -1,15 +1,40 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import CircularProgress from "@mui/material/CircularProgress";
+import Chip from "@mui/material/Chip";
+import Alert from "@mui/material/Alert";
+import Paper from "@mui/material/Paper";
+import MenuList from "@mui/material/MenuList";
+import MenuItem from "@mui/material/MenuItem";
+import CloseIcon from "@mui/icons-material/Close";
 import { api } from "@/lib/api";
 import type { CompanyBasic, UserProfile } from "@/lib/types";
 import CompanyCard from "@/components/CompanyCard";
+import HighlightedText from "@/components/HighlightedText";
+
+function normalizeQuery(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function syncCompareListWithProfile(
+  profileCompany: CompanyBasic,
+  prev: CompanyBasic[],
+): CompanyBasic[] {
+  const targetOnly = prev.filter((company) => company.seq !== profileCompany.seq);
+  return [profileCompany, ...targetOnly].slice(0, 2);
+}
 
 export default function HomePage() {
   const router = useRouter();
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const dropdownAbortRef = useRef<AbortController | null>(null);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
@@ -17,6 +42,7 @@ export default function HomePage() {
   const [dropdownResults, setDropdownResults] = useState<CompanyBasic[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isDropdownLoading, setIsDropdownLoading] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
 
   const [results, setResults] = useState<CompanyBasic[]>([]);
   const [searchRows, setSearchRows] = useState(10);
@@ -25,43 +51,62 @@ export default function HomePage() {
   const [searched, setSearched] = useState(false);
 
   const [compareList, setCompareList] = useState<CompanyBasic[]>([]);
+  const safeSearchQuery = normalizeQuery(searchQuery);
 
-  // localStorage에서 프로필 로드
   useEffect(() => {
     const raw = localStorage.getItem("userProfile");
     if (!raw) return;
     try {
-      setProfile(JSON.parse(raw));
+      const nextProfile: UserProfile = JSON.parse(raw);
+      setProfile(nextProfile);
+      setCompareList((prev) => syncCompareListWithProfile(nextProfile.company, prev));
     } catch {
       // ignore
     }
   }, []);
 
-  // 타이핑 시 드롭다운 자동완성 (디바운스 300ms)
   useEffect(() => {
-    const q = searchQuery.trim();
-    if (!q) {
+    const q = safeSearchQuery.trim();
+    if (!q || q.length < 2 || isComposing) {
+      dropdownAbortRef.current?.abort();
       setDropdownResults([]);
       setShowDropdown(false);
+      setIsDropdownLoading(false);
       return;
     }
     const timer = setTimeout(async () => {
+      dropdownAbortRef.current?.abort();
+      const controller = new AbortController();
+      dropdownAbortRef.current = controller;
       setIsDropdownLoading(true);
       try {
-        const data = await api.searchCompanies(q, 8);
-        setDropdownResults(data);
-        setShowDropdown(data.length > 0);
-      } catch {
-        setDropdownResults([]);
-        setShowDropdown(false);
+        const data = await api.searchCompanies(q, 8, {
+          fallback: false,
+          signal: controller.signal,
+        });
+        startTransition(() => {
+          setDropdownResults(data);
+          setShowDropdown(data.length > 0);
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+        startTransition(() => {
+          setDropdownResults([]);
+          setShowDropdown(false);
+        });
       } finally {
-        setIsDropdownLoading(false);
+        if (dropdownAbortRef.current === controller) {
+          setIsDropdownLoading(false);
+        }
       }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+    }, 120);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [isComposing, safeSearchQuery]);
 
-  // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -75,9 +120,15 @@ export default function HomePage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      dropdownAbortRef.current?.abort();
+    };
+  }, []);
+
   async function handleSearch() {
-    const q = searchQuery.trim();
-    if (!q) return;
+    const q = safeSearchQuery.trim();
+    if (!q || q.length < 2 || isComposing) return;
     setShowDropdown(false);
     setIsLoading(true);
     setError(null);
@@ -100,7 +151,7 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await api.searchCompanies(searchQuery.trim(), newRows);
+      const data = await api.searchCompanies(safeSearchQuery.trim(), newRows);
       setResults(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "더보기에 실패했습니다.");
@@ -121,8 +172,23 @@ export default function HomePage() {
 
   function toggleCompare(company: CompanyBasic) {
     setCompareList((prev) => {
+      if (profile && company.seq === profile.company.seq) {
+        return syncCompareListWithProfile(profile.company, prev);
+      }
+
       const exists = prev.find((c) => c.seq === company.seq);
-      if (exists) return prev.filter((c) => c.seq !== company.seq);
+      if (exists) {
+        return prev.filter((c) => c.seq !== company.seq);
+      }
+
+      if (profile) {
+        const [current, target] = syncCompareListWithProfile(profile.company, prev);
+        if (target) {
+          return [current, company];
+        }
+        return [current, company];
+      }
+
       if (prev.length >= 2) return prev;
       return [...prev, company];
     });
@@ -130,17 +196,13 @@ export default function HomePage() {
 
   function handleDropdownSelect(company: CompanyBasic) {
     setShowDropdown(false);
-    setSearchQuery(company.name);
+    setSearchQuery(normalizeQuery(company.name));
     toggleCompare(company);
   }
 
   function addMyCompany() {
     if (!profile) return;
-    setCompareList((prev) => {
-      if (prev.find((c) => c.seq === profile.company.seq)) return prev;
-      if (prev.length >= 2) return prev;
-      return [...prev, profile.company];
-    });
+    setCompareList((prev) => syncCompareListWithProfile(profile.company, prev));
   }
 
   function goCompare() {
@@ -151,17 +213,16 @@ export default function HomePage() {
 
   const myCompanyInCompare =
     profile && compareList.some((c) => c.seq === profile.company.seq);
-  const anyLoading = isLoading || isDropdownLoading;
 
   return (
     <div className="flex flex-col gap-8">
       {/* Hero */}
       <section className="text-center">
         <h1 className="text-2xl font-bold leading-snug text-[#0f172a] sm:text-3xl">
-          <span aria-hidden>🧭</span> 감이 아닌 데이터로 이직을 결정하다
+          다른 직장은 어떨까 궁금하다면? 🤔
         </h1>
         <p className="mt-2 text-sm text-[#64748b] sm:text-base">
-          국민연금 데이터 기반 기업 건강도 &amp; 이직 추천도
+          국민연금 데이터 기반 이직 추천도
         </p>
       </section>
 
@@ -180,8 +241,7 @@ export default function HomePage() {
                 {profile.role}
                 {profile.yearsOfExp != null && (
                   <span>
-                    {" "}
-                    ·{" "}
+                    {" "}·{" "}
                     {profile.yearsOfExp === 0
                       ? "1년 미만"
                       : profile.yearsOfExp === 10
@@ -193,25 +253,21 @@ export default function HomePage() {
             </div>
             <div className="flex items-center gap-2">
               {!myCompanyInCompare && compareList.length < 2 && (
-                <button
-                  type="button"
-                  onClick={addMyCompany}
-                  className="rounded-lg bg-[#3b82f6] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#2563eb]"
-                >
+                <Button variant="contained" size="small" onClick={addMyCompany}>
                   비교에 추가
-                </button>
+                </Button>
               )}
               {myCompanyInCompare && (
-                <span className="rounded-lg bg-[#dbeafe] px-3 py-1.5 text-sm font-medium text-[#3b82f6]">
-                  비교 중
-                </span>
+                <Chip label="비교 중" color="primary" variant="outlined" size="small" />
               )}
-              <Link
+              <Button
+                variant="outlined"
+                size="small"
+                component={Link}
                 href="/profile"
-                className="rounded-lg border border-[#bfdbfe] bg-white px-3 py-1.5 text-sm font-medium text-[#64748b] transition-colors hover:bg-[#f1f5f9]"
               >
                 수정
-              </Link>
+              </Button>
             </div>
           </div>
         </section>
@@ -221,75 +277,90 @@ export default function HomePage() {
           <p className="mt-1 text-sm text-[#64748b]">
             내 현재 직장을 등록하면 관심 회사와 바로 비교 분석할 수 있어요.
           </p>
-          <Link
+          <Button
+            variant="contained"
+            component={Link}
             href="/profile"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#3b82f6] px-5 py-2.5 font-medium text-white transition-colors hover:bg-[#2563eb]"
+            sx={{ mt: 2 }}
           >
-            <span>내 회사 등록하기</span>
-            <span aria-hidden>→</span>
-          </Link>
+            내 회사 등록하기 →
+          </Button>
         </section>
       )}
 
       {/* 검색 바 + 드롭다운 */}
       <section className="flex flex-col gap-2">
         <div className="relative flex gap-2" ref={searchContainerRef}>
-          {/* 입력 필드 */}
           <div className="relative flex-1">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+            <TextField
+              fullWidth
+              size="small"
+              value={safeSearchQuery}
+              onChange={(e) => setSearchQuery(normalizeQuery(e.target.value))}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={(e) => {
+                setIsComposing(false);
+                setSearchQuery(normalizeQuery(e.target.value));
+              }}
               onFocus={() => dropdownResults.length > 0 && setShowDropdown(true)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleSearch();
+                if (e.key === "Enter" && !isComposing) handleSearch();
                 if (e.key === "Escape") setShowDropdown(false);
               }}
               placeholder="비교할 회사명을 검색하세요"
-              className="w-full rounded-lg border border-[#e2e8f0] bg-white py-2.5 pl-4 pr-9 text-[#0f172a] outline-none placeholder:text-[#94a3b8] focus:border-[#3b82f6]"
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      {isDropdownLoading ? (
+                        <CircularProgress size={16} />
+                      ) : safeSearchQuery ? (
+                        <IconButton size="small" onClick={clearSearch} edge="end">
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      ) : null}
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
-            {/* X 버튼 */}
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                aria-label="검색어 지우기"
-                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full text-[#94a3b8] transition-colors hover:bg-[#f1f5f9] hover:text-[#64748b]"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="h-3.5 w-3.5"
-                >
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-              </button>
-            )}
 
             {/* 자동완성 드롭다운 */}
             {showDropdown && dropdownResults.length > 0 && (
-              <ul className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-[#e2e8f0] bg-white shadow-lg">
-                {dropdownResults.map((company) => {
-                  const inCompare = compareList.some((c) => c.seq === company.seq);
-                  const compareFull = compareList.length >= 2 && !inCompare;
-                  return (
-                    <li key={company.seq}>
-                      <button
-                        type="button"
+              <Paper
+                elevation={3}
+                sx={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: "100%",
+                  zIndex: 30,
+                  mt: 0.5,
+                  maxHeight: 288,
+                  overflow: "auto",
+                }}
+              >
+                <MenuList dense>
+                  {dropdownResults.map((company) => {
+                    const inCompare = compareList.some((c) => c.seq === company.seq);
+                    const isMyCompany =
+                      profile?.company.seq != null &&
+                      company.seq === profile.company.seq;
+                    const compareFull = compareList.length >= 2 && !inCompare;
+                    return (
+                      <MenuItem
+                        key={company.seq}
+                        disabled={compareFull}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => !compareFull && handleDropdownSelect(company)}
-                        disabled={compareFull}
-                        className={[
-                          "flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left transition-colors",
-                          compareFull
-                            ? "cursor-not-allowed opacity-40"
-                            : "hover:bg-[#f1f5f9]",
-                        ].join(" ")}
+                        sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}
                       >
                         <div className="flex min-w-0 flex-col">
                           <span className="truncate font-medium text-[#0f172a]">
-                            {company.name}
+                            <HighlightedText
+                              text={company.name}
+                              query={safeSearchQuery}
+                            />
                           </span>
                           <span className="text-xs text-[#94a3b8]">
                             {[
@@ -302,43 +373,37 @@ export default function HomePage() {
                               .join(" · ")}
                           </span>
                         </div>
-
-                        {/* 상태 배지 */}
-                        <span className="ml-3 shrink-0">
-                          {inCompare ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#dbeafe] px-2 py-0.5 text-xs font-medium text-[#3b82f6]">
-                              ✓ 선택됨
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#f1f5f9] px-2 py-0.5 text-xs text-[#64748b]">
-                              + 비교 추가
-                            </span>
-                          )}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                        <Chip
+                          label={
+                            isMyCompany
+                              ? "내 회사"
+                              : inCompare
+                              ? "✓ 선택됨"
+                              : "+ 비교 추가"
+                          }
+                          size="small"
+                          color={inCompare ? "primary" : "default"}
+                          variant={inCompare ? "filled" : "outlined"}
+                        />
+                      </MenuItem>
+                    );
+                  })}
+                </MenuList>
+              </Paper>
             )}
           </div>
 
-          <button
-            type="button"
+          <Button
+            variant="contained"
             onClick={handleSearch}
-            disabled={isLoading || !searchQuery.trim()}
-            className="shrink-0 rounded-lg bg-[#3b82f6] px-6 py-2.5 font-medium text-white transition-colors hover:bg-[#2563eb] disabled:cursor-not-allowed disabled:bg-[#cbd5e1]"
+            disabled={isLoading || safeSearchQuery.trim().length < 2}
+            sx={{ flexShrink: 0 }}
           >
-            {isLoading ? "검색 중..." : "검색"}
-          </button>
+            {isLoading ? <CircularProgress size={20} color="inherit" /> : "검색"}
+          </Button>
         </div>
 
-        {/* 로딩 바 */}
-        {anyLoading && (
-          <div className="h-0.5 w-full overflow-hidden rounded-full bg-[#e2e8f0]">
-            <div className="loading-bar-thumb h-full w-2/5 rounded-full bg-[#3b82f6]" />
-          </div>
-        )}
+        {/* 드롭다운 로딩은 InputAdornment로 처리됨 */}
       </section>
 
       {/* 비교 선택 영역 */}
@@ -349,31 +414,36 @@ export default function HomePage() {
               <span className="text-sm font-medium text-[#64748b]">
                 비교 대상 ({compareList.length}/2):
               </span>
-              {compareList.map((c) => (
-                <span
+              {compareList.map((c, index) => (
+                <Chip
                   key={c.seq}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-sm text-[#0f172a] ring-1 ring-[#e2e8f0]"
-                >
-                  {c.name}
-                  <button
-                    type="button"
-                    onClick={() => toggleCompare(c)}
-                    className="text-[#94a3b8] hover:text-[#ef4444]"
-                    aria-label={`${c.name} 제거`}
-                  >
-                    ×
-                  </button>
-                </span>
+                  label={
+                    profile && c.seq === profile.company.seq
+                      ? `현재 회사 · ${c.name}`
+                      : index === 1
+                      ? `관심 회사 · ${c.name}`
+                      : c.name
+                  }
+                  onDelete={
+                    profile && c.seq === profile.company.seq
+                      ? undefined
+                      : () => toggleCompare(c)
+                  }
+                  variant="outlined"
+                  size="small"
+                  color={profile && c.seq === profile.company.seq ? "primary" : "default"}
+                />
               ))}
             </div>
-            <button
-              type="button"
+            <Button
+              variant="contained"
+              color="success"
+              size="small"
               onClick={goCompare}
               disabled={compareList.length !== 2}
-              className="rounded-lg bg-[#10b981] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#059669] disabled:cursor-not-allowed disabled:bg-[#cbd5e1]"
             >
               이직 추천도 비교하기
-            </button>
+            </Button>
           </div>
           {compareList.length < 2 && (
             <p className="mt-2 text-xs text-[#94a3b8]">
@@ -384,11 +454,7 @@ export default function HomePage() {
       )}
 
       {/* 검색 결과 */}
-      {error && (
-        <p className="rounded-lg bg-[#fef2f2] px-4 py-3 text-sm text-[#ef4444]">
-          {error}
-        </p>
-      )}
+      {error && <Alert severity="error">{error}</Alert>}
 
       {searched && !error && results.length === 0 && !isLoading && (
         <p className="text-center text-sm text-[#64748b]">검색 결과가 없습니다.</p>
@@ -411,17 +477,16 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* 더보기 */}
           {results.length === searchRows && (
             <div className="flex justify-center pt-2">
-              <button
-                type="button"
+              <Button
+                variant="outlined"
                 onClick={handleLoadMore}
                 disabled={isLoading}
-                className="rounded-lg border border-[#e2e8f0] bg-white px-6 py-2.5 text-sm font-medium text-[#64748b] transition-colors hover:bg-[#f1f5f9] disabled:cursor-not-allowed disabled:opacity-50"
+                startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : undefined}
               >
                 {isLoading ? "불러오는 중..." : `더보기 (${results.length}개 표시 중)`}
-              </button>
+              </Button>
             </div>
           )}
         </section>

@@ -22,14 +22,14 @@ def _load_api_key() -> str:
     raise EnvironmentError("NPS_API_KEY not found in .env")
 
 
-def _request(base_url: str, endpoint: str, params: dict[str, Any], retries: int = 1) -> dict:
+def _request(base_url: str, endpoint: str, params: dict[str, Any], retries: int = 2) -> dict:
     api_key = _load_api_key()
     query = {"serviceKey": api_key, "dataType": "json",
              **{k: v for k, v in params.items() if v not in (None, "")}}
     url = f"{base_url}{endpoint}?{urlencode(query)}"
     for attempt in range(retries + 1):
         try:
-            with urlopen(url, timeout=10) as resp:
+            with urlopen(url, timeout=12) as resp:
                 charset = resp.headers.get_content_charset() or "utf-8"
                 return json.loads(resp.read().decode(charset))
         except (URLError, OSError, ValueError):

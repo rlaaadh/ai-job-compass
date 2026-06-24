@@ -1,4 +1,4 @@
--- AI 이직 나침반 DB 스키마
+-- 이직각 DB 스키마
 -- 국민연금공단 공공 API 기반
 
 CREATE TABLE IF NOT EXISTS companies (
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS companies (
     join_date           TEXT,                 -- 적용일자 yyyymmdd (adptDt)
     employee_count      INTEGER,              -- 현재 가입자 수 (jnngpCnt)
     -- 당월 국민연금 보험료 고지 기준 금액. 실제 급여와 다름 (연금보험료 ≠ 임금)
-    monthly_charge_amt  INTEGER,              -- 당월고지금액 (crrmmNtcAmt)
+    monthly_charge_amt  BIGINT,               -- 당월고지금액 (crrmmNtcAmt)
     sido_code           TEXT,                 -- 시도 코드 (ldongAddrMgplDgCd)
     sigungu_code        TEXT,                 -- 시군구 코드 (ldongAddrMgplSgguCd)
     data_created_ym     TEXT,                 -- 데이터 생성 년월 yyyymm (dataCrtYm)

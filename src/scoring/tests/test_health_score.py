@@ -15,6 +15,7 @@ def _make_company(seq=1, name="테스트회사", employee_count=100, charge=20_0
     return Company(
         seq=seq,
         name=name,
+        industry_name=None,
         employee_count=employee_count,
         monthly_charge_amt=charge,
     )
@@ -77,6 +78,21 @@ class TestHealthScoreNormal(unittest.TestCase):
         self.assertTrue(
             result.breakdown["salary_signal"].get("is_reference_only")
         )
+
+    def test_company_size_score_reflects_employee_scale(self):
+        medium_company = _make_company(seq=1, name="중소", employee_count=41)
+        larger_company = _make_company(seq=2, name="중견", employee_count=531)
+
+        medium_score = calculate_health_score(
+            medium_company,
+            _make_stats(1, start_count=41, monthly_delta=0, joiners=1, leavers=1),
+        )
+        larger_score = calculate_health_score(
+            larger_company,
+            _make_stats(2, start_count=531, monthly_delta=0, joiners=3, leavers=3),
+        )
+
+        self.assertGreaterEqual(larger_score.size_fit - medium_score.size_fit, 3)
 
 
 class TestHealthScorePartial(unittest.TestCase):
@@ -178,8 +194,97 @@ class TestRecommendation(unittest.TestCase):
         cur = calculate_health_score(cur_co, _make_stats(1, 100, 2))
         tgt = calculate_health_score(tgt_co, _make_stats(2, 120, 3))
         rec = calculate_recommendation(cur, tgt, cur_co, tgt_co)
-        self.assertEqual(rec.salary_change_signal, 7_000_000)
+        self.assertEqual(rec.salary_change_signal, 9_333_333)
         self.assertIn("salary_change_note", rec.summary)
+
+    def test_role_fit_boost_for_frontend_platform_company(self):
+        current_co = _make_company(
+            seq=1,
+            name="식품회사",
+            employee_count=100,
+            charge=15_000_000,
+        )
+        current_co.industry_name = "기타 식품 제조업"
+        target_co = _make_company(
+            seq=2,
+            name="플랫폼회사",
+            employee_count=100,
+            charge=15_000_000,
+        )
+        target_co.industry_name = "응용 소프트웨어 개발 및 공급업"
+
+        current = calculate_health_score(current_co, _make_stats(1, 100, 1))
+        target = calculate_health_score(target_co, _make_stats(2, 100, 1))
+        rec = calculate_recommendation(
+            current,
+            target,
+            current_co,
+            target_co,
+            role="프론트엔드개발",
+        )
+
+        self.assertGreater(rec.role_fit_delta, 0)
+        self.assertGreaterEqual(rec.score, 56)
+
+    def test_salary_decrease_penalizes_recommendation(self):
+        current_co = _make_company(seq=1, charge=30_000_000, employee_count=100)
+        target_co = _make_company(seq=2, charge=15_000_000, employee_count=100)
+        current_co.industry_name = "응용 소프트웨어 개발 및 공급업"
+        target_co.industry_name = "응용 소프트웨어 개발 및 공급업"
+
+        current = calculate_health_score(current_co, _make_stats(1, 100, 1))
+        target = calculate_health_score(target_co, _make_stats(2, 100, 1))
+        rec = calculate_recommendation(
+            current,
+            target,
+            current_co,
+            target_co,
+            role="프론트엔드개발",
+        )
+
+        self.assertLess(rec.salary_change_signal, 0)
+        self.assertLess(rec.summary["salary_adjustment"], 0)
+
+    def test_large_salary_increase_can_push_recommendation_positive(self):
+        current_co = _make_company(seq=1, charge=15_000_000, employee_count=100)
+        target_co = _make_company(seq=2, charge=26_250_000, employee_count=100)
+        current_co.industry_name = "응용 소프트웨어 개발 및 공급업"
+        target_co.industry_name = "응용 소프트웨어 개발 및 공급업"
+
+        current = HealthScoreResult(
+            total=58,
+            growth=20,
+            stability=18,
+            hiring_activity=8,
+            size_fit=6,
+            salary_signal=5,
+            risk_penalty=0,
+            breakdown={},
+            grade="보통",
+        )
+        target = HealthScoreResult(
+            total=54,
+            growth=19,
+            stability=17,
+            hiring_activity=7,
+            size_fit=6,
+            salary_signal=7,
+            risk_penalty=0,
+            breakdown={},
+            grade="보통",
+        )
+
+        rec = calculate_recommendation(
+            current,
+            target,
+            current_co,
+            target_co,
+            role="프론트엔드개발",
+        )
+
+        self.assertGreaterEqual(rec.salary_change_signal, 15_000_000)
+        self.assertGreaterEqual(rec.summary["salary_adjustment"], 10)
+        self.assertIn(rec.verdict, {"추천", "강력 추천"})
 
     def test_recommend_from_raw_end_to_end(self):
         cur_co = _make_company(seq=1, charge=15_000_000)

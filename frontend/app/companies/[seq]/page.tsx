@@ -2,12 +2,30 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
 import { api } from "@/lib/api";
 import type { HealthScore } from "@/lib/types";
 import { gradeColor } from "@/lib/colors";
 import CircleGauge from "@/components/CircleGauge";
 import ScoreBreakdown from "@/components/ScoreBreakdown";
 import AIReportCard from "@/components/AIReportCard";
+import EmployeeTrendChart from "@/components/EmployeeTrendChart";
+
+function formatChange(changePct: number | null): string {
+  if (changePct == null) {
+    return "데이터 부족";
+  }
+  if (changePct > 0) {
+    return `최근 ${changePct.toFixed(1)}% 증가`;
+  }
+  if (changePct < 0) {
+    return `최근 ${Math.abs(changePct).toFixed(1)}% 감소`;
+  }
+  return "최근 변동 없음";
+}
 
 export default function CompanyDetailPage({
   params,
@@ -64,13 +82,13 @@ export default function CompanyDetailPage({
       </Link>
 
       {isLoading && (
-        <p className="text-center text-sm text-[#64748b]">불러오는 중...</p>
+        <div className="flex justify-center py-12">
+          <CircularProgress size={40} />
+        </div>
       )}
 
       {error && !isLoading && (
-        <p className="rounded-lg bg-[#fef2f2] px-4 py-3 text-sm text-[#ef4444]">
-          {error}
-        </p>
+        <Alert severity="error">{error}</Alert>
       )}
 
       {health && !isLoading && (
@@ -86,12 +104,15 @@ export default function CompanyDetailPage({
           <section className="flex flex-col items-center gap-8 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-6 sm:flex-row sm:items-start">
             <div className="flex flex-col items-center gap-3">
               <CircleGauge score={health.health_score} grade={health.grade} />
-              <span
-                className="rounded-full px-3 py-1 text-sm font-semibold text-white"
-                style={{ backgroundColor: gradeColor(health.grade) }}
-              >
-                {health.grade}
-              </span>
+              <Chip
+                label={health.grade}
+                size="small"
+                sx={{
+                  backgroundColor: gradeColor(health.grade),
+                  color: "white",
+                  fontWeight: 600,
+                }}
+              />
             </div>
             <div className="w-full flex-1">
               <h2 className="mb-4 text-sm font-semibold text-[#64748b]">
@@ -101,20 +122,58 @@ export default function CompanyDetailPage({
                 growth={health.growth}
                 stability={health.stability}
                 hiring_activity={health.hiring_activity}
+                size_fit={health.size_fit}
+                salary_signal={health.salary_signal}
               />
             </div>
           </section>
 
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
+              <p className="text-sm font-medium text-[#64748b]">현재 직원 수</p>
+              <p className="mt-2 text-3xl font-bold text-[#0f172a]">
+                {health.employee_count != null
+                  ? `${health.employee_count.toLocaleString()}명`
+                  : "-"}
+              </p>
+              <p className="mt-2 text-xs text-[#94a3b8]">
+                국민연금 가입 직원 수 기준
+              </p>
+            </div>
+            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
+              <p className="text-sm font-medium text-[#64748b]">최근 직원 변화율</p>
+              <p className="mt-2 text-3xl font-bold text-[#0f172a]">
+                {health.recent_employee_change_pct != null
+                  ? `${Math.abs(health.recent_employee_change_pct).toFixed(1)}%`
+                  : "-"}
+              </p>
+              <p className="mt-2 text-xs text-[#94a3b8]">
+                {formatChange(health.recent_employee_change_pct)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
+              <p className="text-sm font-medium text-[#64748b]">월별 데이터 범위</p>
+              <p className="mt-2 text-3xl font-bold text-[#0f172a]">
+                {health.monthly_employee_stats.length}개월
+              </p>
+              <p className="mt-2 text-xs text-[#94a3b8]">
+                최근 확보된 국민연금 월별 통계 기준
+              </p>
+            </div>
+          </section>
+
+          <EmployeeTrendChart stats={health.monthly_employee_stats} />
+
           <AIReportCard report={health.ai_report} type="company" />
 
           <div className="flex flex-col items-start gap-2">
-            <button
-              type="button"
+            <Button
+              variant="outlined"
               onClick={addToCompare}
-              className="rounded-lg border border-[#3b82f6] bg-white px-4 py-2 text-sm font-medium text-[#3b82f6] transition-colors hover:bg-[#eff6ff]"
+              color={added ? "success" : "primary"}
             >
               {added ? "✓ 비교 대상에 담김" : "이직 비교에 추가하기"}
-            </button>
+            </Button>
             {added && (
               <Link
                 href="/"

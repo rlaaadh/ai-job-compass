@@ -15,6 +15,7 @@ from src.api.schemas import (
     CompanyBasicResponse,
     CompanyReportResponse,
     HealthScoreResponse,
+    MonthlyEmployeeStatResponse,
 )
 from src.db.models import Company, CompanyMonthlyStats
 from src.pipeline.nps_client import NPSClient
@@ -32,7 +33,11 @@ def _int(val) -> int | None:
 
 def raw_to_company(raw: dict) -> Company:
     """NPS 원천 dict를 Company ORM 객체(미저장)로 변환한다."""
-    company = Company(seq=int(raw["seq"]))
+    seq = _int(raw.get("seq"))
+    if seq is None:
+        raise ValueError(f"유효하지 않은 사업장 seq 값입니다: {raw.get('seq')!r}")
+
+    company = Company(seq=seq)
     company.name = raw.get("wkplNm", "")
     company.business_reg_no = raw.get("bzowrRgstNo")
     company.address = raw.get("wkplRoadNmDtlAddr")
@@ -97,6 +102,7 @@ def company_to_basic(company: Company) -> CompanyBasicResponse:
 
 def build_health_response(
     company: Company,
+    monthly_stats: list[CompanyMonthlyStats],
     score: HealthScoreResult,
     generator: ReportGenerator,
 ) -> HealthScoreResponse:
@@ -116,14 +122,40 @@ def build_health_response(
     except Exception:
         ai_report = None
 
+    normalized_stats = sorted(
+        [stat for stat in monthly_stats if stat.year_month],
+        key=lambda stat: stat.year_month,
+    )[-12:]
+    monthly_employee_stats = [
+        MonthlyEmployeeStatResponse(
+            year_month=stat.year_month,
+            employee_count=int(stat.employee_count or 0),
+            new_joiners=int(stat.new_joiners or 0),
+            leavers=int(stat.leavers or 0),
+        )
+        for stat in normalized_stats
+    ]
+
+    recent_employee_change_pct: float | None = None
+    if len(monthly_employee_stats) >= 2:
+        first = monthly_employee_stats[0].employee_count
+        last = monthly_employee_stats[-1].employee_count
+        if first > 0:
+            recent_employee_change_pct = round(((last - first) / first) * 100, 1)
+
     return HealthScoreResponse(
         seq=company.seq,
         name=company.name,
+        employee_count=company.employee_count,
         health_score=score.total,
         grade=score.grade,
         growth=score.growth,
         stability=score.stability,
         hiring_activity=score.hiring_activity,
+        size_fit=score.size_fit,
+        salary_signal=score.salary_signal,
+        recent_employee_change_pct=recent_employee_change_pct,
+        monthly_employee_stats=monthly_employee_stats,
         breakdown=score.breakdown,
         ai_report=ai_report,
     )

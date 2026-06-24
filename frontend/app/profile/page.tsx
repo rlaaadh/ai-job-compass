@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import MenuItem from "@mui/material/MenuItem";
+import Alert from "@mui/material/Alert";
+import Autocomplete from "@mui/material/Autocomplete";
 import { api } from "@/lib/api";
 import type { CompanyBasic, UserProfile } from "@/lib/types";
+import HighlightedText from "@/components/HighlightedText";
 
 const EDUCATION_OPTIONS = [
   { value: "", label: "선택 안 함" },
@@ -29,13 +35,12 @@ const EXP_OPTIONS = [
 
 export default function ProfilePage() {
   const router = useRouter();
-  const dropdownRef = useRef<HTMLUListElement>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   const [companyQuery, setCompanyQuery] = useState("");
   const [companyResults, setCompanyResults] = useState<CompanyBasic[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<CompanyBasic | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
 
   const [role, setRole] = useState("");
   const [yearsOfExp, setYearsOfExp] = useState("");
@@ -61,41 +66,51 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const q = companyQuery.trim();
-    if (!q || selectedCompany?.name === q) {
+    if (!q || q.length < 2 || selectedCompany?.name === q) {
+      searchAbortRef.current?.abort();
       setCompanyResults([]);
-      setShowDropdown(false);
+      setIsSearching(false);
       return;
     }
     const timer = setTimeout(async () => {
+      searchAbortRef.current?.abort();
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
       setIsSearching(true);
       try {
-        const results = await api.searchCompanies(q, 5);
-        setCompanyResults(results);
-        setShowDropdown(results.length > 0);
-      } catch {
-        setCompanyResults([]);
+        const results = await api.searchCompanies(q, 5, {
+          fallback: false,
+          signal: controller.signal,
+        });
+        startTransition(() => {
+          setCompanyResults(results);
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+        startTransition(() => {
+          setCompanyResults([]);
+        });
       } finally {
-        setIsSearching(false);
+        if (searchAbortRef.current === controller) {
+          setIsSearching(false);
+        }
       }
-    }, 400);
+    }, 150);
     return () => clearTimeout(timer);
   }, [companyQuery, selectedCompany]);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      searchAbortRef.current?.abort();
+    };
   }, []);
 
   function selectCompany(company: CompanyBasic) {
     setSelectedCompany(company);
     setCompanyQuery(company.name);
     setCompanyResults([]);
-    setShowDropdown(false);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -125,152 +140,145 @@ export default function ProfilePage() {
       </div>
 
       {saved && (
-        <div className="mb-4 rounded-lg bg-[#ecfdf5] px-4 py-3 text-sm text-[#059669]">
+        <Alert severity="success" sx={{ mb: 3 }}>
           저장되었습니다. 홈으로 이동합니다...
-        </div>
+        </Alert>
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {/* 현재 회사 */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#0f172a]">
-            현재 회사 <span className="text-[#ef4444]">*</span>
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={companyQuery}
-              onChange={(e) => {
-                setCompanyQuery(e.target.value);
+        <div className="flex flex-col gap-1">
+          <Autocomplete
+            options={companyResults}
+            getOptionLabel={(option) => option.name}
+            isOptionEqualToValue={(option, value) => option.seq === value.seq}
+            value={selectedCompany}
+            inputValue={companyQuery}
+            onInputChange={(_, value, reason) => {
+              if (reason === "input") {
+                setCompanyQuery(value);
                 setSelectedCompany(null);
-              }}
-              onFocus={() => companyResults.length > 0 && setShowDropdown(true)}
-              placeholder="회사명 검색 (예: 카카오, 네이버)"
-              className="w-full rounded-lg border border-[#e2e8f0] bg-white px-4 py-2.5 text-[#0f172a] outline-none placeholder:text-[#94a3b8] focus:border-[#3b82f6]"
-            />
-            {isSearching && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#94a3b8]">
-                검색 중...
-              </span>
+              }
+            }}
+            onChange={(_, value) => {
+              if (value) selectCompany(value);
+            }}
+            filterOptions={(x) => x}
+            loading={isSearching}
+            loadingText="검색 중..."
+            noOptionsText={
+              companyQuery && !isSearching ? "검색 결과가 없습니다" : "회사명을 입력하세요"
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="현재 회사"
+                required
+                placeholder="회사명 검색 (예: 카카오, 네이버)"
+                size="small"
+              />
             )}
-            {showDropdown && companyResults.length > 0 && (
-              <ul
-                ref={dropdownRef}
-                className="absolute z-10 mt-1 w-full rounded-lg border border-[#e2e8f0] bg-white shadow-md"
-              >
-                {companyResults.map((c) => (
-                  <li key={c.seq}>
-                    <button
-                      type="button"
-                      onClick={() => selectCompany(c)}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-[#f1f5f9]"
-                    >
-                      <span className="font-medium text-[#0f172a]">{c.name}</span>
-                      {c.industry_name && (
-                        <span className="ml-2 text-xs text-[#94a3b8]">{c.industry_name}</span>
-                      )}
-                      {c.employee_count != null && (
-                        <span className="ml-1 text-xs text-[#94a3b8]">· {c.employee_count.toLocaleString()}명</span>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+            renderOption={(props, option) => {
+              const { key, ...rest } = props as React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
+              return (
+                <li key={key} {...rest}>
+                  <span className="font-medium text-[#0f172a]">
+                    <HighlightedText text={option.name} query={companyQuery} />
+                  </span>
+                  {option.industry_name && (
+                    <span className="ml-2 text-xs text-[#94a3b8]">{option.industry_name}</span>
+                  )}
+                  {option.employee_count != null && (
+                    <span className="ml-1 text-xs text-[#94a3b8]">
+                      · {option.employee_count.toLocaleString()}명
+                    </span>
+                  )}
+                </li>
+              );
+            }}
+          />
           {selectedCompany && (
             <p className="text-xs text-[#10b981]">✓ {selectedCompany.name} 선택됨</p>
           )}
           {!selectedCompany && companyQuery.trim() !== "" && !isSearching && companyResults.length === 0 && (
-            <p className="text-xs text-[#f59e0b]">검색 결과가 없습니다. 다른 이름으로 검색해보세요.</p>
+            <p className="text-xs text-[#f59e0b]">
+              검색 결과가 없습니다. 다른 이름으로 검색해보세요.
+            </p>
           )}
         </div>
 
         {/* 직무 */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#0f172a]">
-            직무 <span className="text-[#ef4444]">*</span>
-          </label>
-          <input
-            type="text"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            placeholder="예: 프론트엔드 개발자, 마케터, 기획자"
-            className="rounded-lg border border-[#e2e8f0] bg-white px-4 py-2.5 text-[#0f172a] outline-none placeholder:text-[#94a3b8] focus:border-[#3b82f6]"
-          />
-        </div>
+        <TextField
+          label="직무"
+          required
+          size="small"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          placeholder="예: 프론트엔드 개발자, 마케터, 기획자"
+        />
 
         {/* 연차 */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#0f172a]">
-            연차 <span className="text-[#ef4444]">*</span>
-          </label>
-          <select
-            value={yearsOfExp}
-            onChange={(e) => setYearsOfExp(e.target.value)}
-            className="rounded-lg border border-[#e2e8f0] bg-white px-4 py-2.5 text-[#0f172a] outline-none focus:border-[#3b82f6]"
-          >
-            {EXP_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TextField
+          select
+          label="연차"
+          required
+          size="small"
+          value={yearsOfExp}
+          onChange={(e) => setYearsOfExp(e.target.value)}
+        >
+          {EXP_OPTIONS.map((opt) => (
+            <MenuItem key={opt.value} value={opt.value} disabled={opt.value === ""}>
+              {opt.label}
+            </MenuItem>
+          ))}
+        </TextField>
 
         {/* 학력 */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#0f172a]">
-            학력{" "}
-            <span className="text-xs font-normal text-[#94a3b8]">(선택)</span>
-          </label>
-          <select
-            value={education}
-            onChange={(e) => setEducation(e.target.value)}
-            className="rounded-lg border border-[#e2e8f0] bg-white px-4 py-2.5 text-[#0f172a] outline-none focus:border-[#3b82f6]"
-          >
-            {EDUCATION_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TextField
+          select
+          label="학력 (선택)"
+          size="small"
+          value={education}
+          onChange={(e) => setEducation(e.target.value)}
+        >
+          {EDUCATION_OPTIONS.map((opt) => (
+            <MenuItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </MenuItem>
+          ))}
+        </TextField>
 
         {/* 성별 */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[#0f172a]">
-            성별{" "}
-            <span className="text-xs font-normal text-[#94a3b8]">(선택)</span>
-          </label>
-          <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            className="rounded-lg border border-[#e2e8f0] bg-white px-4 py-2.5 text-[#0f172a] outline-none focus:border-[#3b82f6]"
-          >
-            {GENDER_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TextField
+          select
+          label="성별 (선택)"
+          size="small"
+          value={gender}
+          onChange={(e) => setGender(e.target.value)}
+        >
+          {GENDER_OPTIONS.map((opt) => (
+            <MenuItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </MenuItem>
+          ))}
+        </TextField>
 
         <div className="flex gap-3 pt-1">
-          <button
+          <Button
+            variant="outlined"
             type="button"
             onClick={() => router.push("/")}
-            className="rounded-lg border border-[#e2e8f0] bg-white px-5 py-2.5 text-sm font-medium text-[#64748b] transition-colors hover:bg-[#f1f5f9]"
           >
             취소
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="contained"
             type="submit"
             disabled={!canSubmit || saved}
-            className="flex-1 rounded-lg bg-[#3b82f6] px-6 py-2.5 font-medium text-white transition-colors hover:bg-[#2563eb] disabled:cursor-not-allowed disabled:bg-[#cbd5e1]"
+            fullWidth
           >
             저장하기
-          </button>
+          </Button>
         </div>
       </form>
     </div>

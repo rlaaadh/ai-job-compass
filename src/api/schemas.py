@@ -5,6 +5,13 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class MonthlyEmployeeStatResponse(BaseModel):
+    year_month: str
+    employee_count: int
+    new_joiners: int
+    leavers: int
+
+
 class CompanyBasicResponse(BaseModel):
     seq: int
     name: str
@@ -24,11 +31,16 @@ class CompanyReportResponse(BaseModel):
 class HealthScoreResponse(BaseModel):
     seq: int
     name: str
+    employee_count: Optional[int] = None
     health_score: int
     grade: str                   # 매우 좋음 / 좋음 / 보통 / 주의 / 위험
     growth: int
     stability: int
     hiring_activity: int
+    size_fit: int
+    salary_signal: int
+    recent_employee_change_pct: Optional[float] = None
+    monthly_employee_stats: list[MonthlyEmployeeStatResponse]
     breakdown: dict
     ai_report: Optional[CompanyReportResponse] = None  # AI 분석 없을 때 None
 
@@ -36,6 +48,7 @@ class HealthScoreResponse(BaseModel):
 class CompareRequest(BaseModel):
     current_seq: int
     target_seq: int
+    role: Optional[str] = None
 
 
 class RecommendationReportResponse(BaseModel):

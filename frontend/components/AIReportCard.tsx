@@ -1,3 +1,6 @@
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import type { ReactNode } from "react";
 import type { AIReport, RecommendationReport } from "@/lib/types";
 
 interface AIReportCardProps {
@@ -18,6 +21,48 @@ function isRecommendation(
   return type === "recommendation";
 }
 
+function renderSalaryText(text: string): ReactNode {
+  const signedMatch = text.match(/([+-])\s?([\d,]+원)/);
+  if (signedMatch) {
+    const [, sign, amount] = signedMatch;
+    const direction = sign === "+" ? "증가" : "감소";
+    const replacedText = text.replace(signedMatch[0], `${amount} ${direction}`);
+    const marker = `${amount} ${direction}`;
+    const parts = replacedText.split(marker);
+
+    return (
+      <>
+        {parts[0]}
+        <strong className="font-bold text-[#dc2626]">
+        {amount}{" "}
+        {direction}
+        </strong>
+        {parts[1]}
+      </>
+    );
+  }
+
+  const wordMatch = text.match(/([\d,]+원)\s+(증가|감소)/);
+  if (!wordMatch) {
+    return text;
+  }
+
+  const [, amount, direction] = wordMatch;
+  const marker = `${amount} ${direction}`;
+  const parts = text.split(marker);
+
+  return (
+    <>
+      {parts[0]}
+      <strong className="font-bold text-[#dc2626]">
+      {amount}{" "}
+      {direction}
+      </strong>
+      {parts[1]}
+    </>
+  );
+}
+
 export default function AIReportCard({ report, type }: AIReportCardProps) {
   if (!report) return null;
 
@@ -27,7 +72,7 @@ export default function AIReportCard({ report, type }: AIReportCardProps) {
         {
           label: "연봉",
           text: report.salary_comment,
-          note: "참고값, 실제 급여와 다를 수 있음",
+          note: "직무·연차 평균 비교 아님, 국민연금 기반 참고값",
         },
       ]
     : [
@@ -37,11 +82,14 @@ export default function AIReportCard({ report, type }: AIReportCardProps) {
       ];
 
   return (
-    <section className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-5">
-      <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[#eff6ff] px-3 py-1 text-xs font-semibold text-[#3b82f6]">
-        <span aria-hidden>✨</span>
-        AI 분석
-      </div>
+    <Paper variant="outlined" sx={{ p: 2.5 }}>
+      <Chip
+        label="✨ AI 분석"
+        size="small"
+        color="primary"
+        variant="outlined"
+        sx={{ mb: 1.5, fontWeight: 600 }}
+      />
 
       <p className="text-[15px] leading-relaxed text-[#0f172a]">
         {report.summary}
@@ -49,10 +97,7 @@ export default function AIReportCard({ report, type }: AIReportCardProps) {
 
       <div className="mt-4 flex flex-col gap-3">
         {sections.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-lg border border-[#e2e8f0] bg-white p-3"
-          >
+          <Paper key={s.label} variant="outlined" sx={{ p: 1.5 }}>
             <div className="mb-1 text-xs font-semibold text-[#64748b]">
               {s.label}
               {s.note && (
@@ -61,10 +106,14 @@ export default function AIReportCard({ report, type }: AIReportCardProps) {
                 </span>
               )}
             </div>
-            <p className="text-sm leading-relaxed text-[#334155]">{s.text}</p>
-          </div>
+            <p className="text-sm leading-relaxed text-[#334155]">
+              {type === "recommendation" && s.label === "연봉"
+                ? renderSalaryText(s.text)
+                : s.text}
+            </p>
+          </Paper>
         ))}
       </div>
-    </section>
+    </Paper>
   );
 }

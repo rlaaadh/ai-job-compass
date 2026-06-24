@@ -36,7 +36,7 @@ async def compare_companies(request: CompareRequest) -> CompareResponse:
     target_score = calculate_health_score(target_company, target_stats)
 
     rec = calculate_recommendation(
-        current_score, target_score, current_company, target_company
+        current_score, target_score, current_company, target_company, request.role
     )
 
     generator = ReportGenerator()

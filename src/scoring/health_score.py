@@ -161,7 +161,7 @@ def score_size_fit(
     stats: Sequence[CompanyMonthlyStats],
     company: Company,
 ) -> tuple[int, dict]:
-    """규모 적합성 (0-10): 직원 수 구간 + 성장 패턴 일관성."""
+    """기업 규모 (0-10): 국민연금 가입 직원 수 중심 + 규모 변화 흐름 보조."""
     detail: dict = {"max": MAX_SIZE_FIT}
 
     # 현재 직원 수: 최신 월별 통계 우선, 없으면 Company.employee_count
@@ -170,21 +170,27 @@ def score_size_fit(
     else:
         emp = _safe_int(company.employee_count)
 
-    # 구간별 기본 점수 (최대 6)
-    if emp >= 300:
+    # 직원 수 자체를 더 강하게 반영하는 구간별 기본 점수 (최대 8)
+    if emp >= 1_000:
+        size_base = 8
+    elif emp >= 500:
+        size_base = 7
+    elif emp >= 300:
         size_base = 6
     elif emp >= 100:
-        size_base = 6
-    elif emp >= 30:
         size_base = 5
-    elif emp >= 10:
+    elif emp >= 50:
         size_base = 4
-    elif emp > 0:
+    elif emp >= 30:
         size_base = 3
+    elif emp >= 10:
+        size_base = 2
+    elif emp > 0:
+        size_base = 1
     else:
         size_base = 0
 
-    # 성장 패턴 일관성 (최대 4): 월별 증가 방향이 일관되면 가점
+    # 변화 흐름은 보조 점수만 부여한다 (최대 2)
     consistency_part = 0
     consistent_ratio = None
     if len(stats) >= 3:
@@ -196,19 +202,19 @@ def score_size_fit(
         if non_zero:
             ups = sum(1 for d in non_zero if d > 0)
             consistent_ratio = ups / len(non_zero)
-            # 한 방향으로 일관될수록(0 또는 1에 가까울수록) 가점
             directionality = abs(consistent_ratio - 0.5) * 2  # 0~1
-            consistency_part = _clamp(directionality * 4, 0, 4)
+            consistency_part = _clamp(directionality * 2, 0, 2)
         else:
-            consistency_part = 2  # 변동 없음 = 안정적
+            consistency_part = 1  # 변동 없음은 중립 보조점수
     elif emp > 0:
-        consistency_part = 2  # 데이터 부족 시 중립
+        consistency_part = 1  # 데이터 부족 시 중립
 
     score = _clamp(size_base + consistency_part, 0, MAX_SIZE_FIT)
     detail.update(
-        reason="직원 수 구간 + 성장 패턴 일관성",
+        reason="국민연금 가입 직원 수 구간 + 규모 변화 흐름 보조",
         employee_count=emp,
         size_base=size_base,
+        consistency_part=consistency_part,
         growth_consistency_ratio=(
             round(consistent_ratio, 2) if consistent_ratio is not None else None
         ),

@@ -3,3 +3,24 @@
 .env.*
 !.env.example
 
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.dylib
+
+# Cython
+*.pyx
+*.pxd
+*.pxi
+
+# Build cache
+.tmp_pycache/
+
+# Database
+*.db
+

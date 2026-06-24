@@ -1,9 +1,11 @@
+import LinearProgress from "@mui/material/LinearProgress";
+
 interface ScoreBreakdownProps {
-  growth: number; // 0-35
-  stability: number; // 0-30
-  hiring_activity: number; // 0-15
-  size_fit?: number; // 참고
-  salary_signal?: number; // 참고값
+  growth: number;
+  stability: number;
+  hiring_activity: number;
+  size_fit?: number;
+  salary_signal?: number;
 }
 
 interface Item {
@@ -15,6 +17,7 @@ interface Item {
 
 function Bar({ item }: { item: Item }) {
   const pct = item.max > 0 ? Math.max(0, Math.min(100, (item.value / item.max) * 100)) : 0;
+  const showLowHiringNote = item.name === "채용 활동성" && item.value <= 5;
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between text-sm">
@@ -31,12 +34,24 @@ function Bar({ item }: { item: Item }) {
           <span className="text-[#94a3b8]"> / {item.max}</span>
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-[#e2e8f0]">
-        <div
-          className="h-full rounded-full bg-[#3b82f6] transition-[width] duration-700 ease-out"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+      <LinearProgress
+        variant="determinate"
+        value={pct}
+        sx={{
+          height: 8,
+          borderRadius: 9999,
+          backgroundColor: "#e2e8f0",
+          "& .MuiLinearProgress-bar": {
+            borderRadius: 9999,
+            transition: "transform 0.7s ease-out",
+          },
+        }}
+      />
+      {showLowHiringNote && (
+        <p className="mt-2 text-xs text-[#94a3b8]">
+          최근에 채용을 하고 있지 않는 기업이에요
+        </p>
+      )}
     </div>
   );
 }
@@ -55,14 +70,19 @@ export default function ScoreBreakdown({
   ];
 
   if (size_fit !== undefined) {
-    items.push({ name: "규모 적합도", value: size_fit, max: 20 });
+    items.push({
+      name: "기업 규모",
+      value: size_fit,
+      max: 10,
+      note: "(직원 수와 규모 변화 흐름 기준)",
+    });
   }
   if (salary_signal !== undefined) {
     items.push({
-      name: "연봉 시그널",
+      name: "연봉 추정 신호",
       value: salary_signal,
-      max: 100,
-      note: "(참고값, 실제 급여와 다를 수 있음)",
+      max: 10,
+      note: "(직무·연차 평균 비교 아님, 국민연금 기반 참고값)",
     });
   }
 

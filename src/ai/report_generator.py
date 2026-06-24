@@ -170,15 +170,64 @@ class ReportGenerator:
 
     @staticmethod
     def _fallback_growth(score: HealthScoreResult) -> str:
-        return f"성장성 점수는 35점 만점에 {score.growth}점입니다."
+        growth_detail = score.breakdown.get("growth", {})
+        growth_pct = growth_detail.get("employee_growth_pct")
+
+        if score.growth <= 10:
+            opener = "성장성은 아직 엔진 예열 단계예요."
+        elif score.growth <= 25:
+            opener = "성장성은 무난하지만, 확실한 가속이 붙었다고 보긴 조금 일러요."
+        elif score.growth < 30:
+            opener = "성장성은 꽤 괜찮은 편이에요. 회사가 앞으로 가는 힘은 느껴집니다."
+        else:
+            opener = "성장성은 제법 뜨겁습니다. 숫자만 보면 회사가 앞으로 밀고 나가는 그림에 가까워요."
+
+        if growth_pct is None:
+            return opener
+
+        direction = "증가" if growth_pct >= 0 else "감소"
+        return f"{opener} 최근 직원 수가 {abs(growth_pct):.1f}% {direction}한 흐름도 함께 반영됐어요."
 
     @staticmethod
     def _fallback_stability(score: HealthScoreResult) -> str:
-        return f"안정성 점수는 30점 만점에 {score.stability}점입니다."
+        stability_detail = score.breakdown.get("stability", {})
+        turnover_rate = stability_detail.get("turnover_rate")
+
+        if score.stability <= 10:
+            opener = "안정성은 살짝 흔들리는 편이에요. 오래 다니기 편한 조직인지 한 번 더 확인해볼 필요가 있어요."
+        elif score.stability <= 20:
+            opener = "안정성은 보통 수준이에요. 아주 불안하진 않지만, 완전히 단단하다고 보기도 어려워요."
+        elif score.stability < 26:
+            opener = "안정성은 꽤 괜찮아요. 큰 흔들림 없이 굴러가는 조직에 가깝습니다."
+        else:
+            opener = "안정성은 제법 단단합니다. 쉽게 출렁이는 팀 분위기는 아닐 가능성이 높아요."
+
+        if turnover_rate is None:
+            return opener
+
+        return f"{opener} 최근 이직률 추정치는 {turnover_rate * 100:.1f}% 수준으로 반영됐어요."
 
     @staticmethod
     def _fallback_hiring(score: HealthScoreResult) -> str:
-        return f"채용 활성도 점수는 15점 만점에 {score.hiring_activity}점입니다."
+        hiring_detail = score.breakdown.get("hiring_activity", {})
+        recent_joiners = hiring_detail.get("recent_joiners")
+        months_used = hiring_detail.get("months_used")
+        recent_hire_ratio = hiring_detail.get("recent_hire_ratio")
+
+        if score.hiring_activity <= 5:
+            opener = "채용 활동은 조용한 편이에요. 최근에는 사람을 공격적으로 뽑고 있는 회사로 보이진 않습니다."
+        elif score.hiring_activity <= 10:
+            opener = "채용 활동은 있는 편이지만 아주 활발하다고 보긴 어려워요. 필요한 자리만 선별해서 채우는 느낌에 가깝습니다."
+        else:
+            opener = "채용 활동은 꽤 살아 있어요. 최근에도 조직에 새 피를 계속 수혈하는 흐름으로 읽힙니다."
+
+        if recent_joiners is None or months_used is None or recent_hire_ratio is None:
+            return opener
+
+        return (
+            f"{opener} 최근 {months_used}개월 국민연금 데이터 기준 신규 가입자는 "
+            f"{recent_joiners}명, 현재 직원 대비 유입 비율은 {recent_hire_ratio * 100:.1f}%로 반영됐어요."
+        )
 
     def _fallback_company_report(
         self, score: HealthScoreResult, name: str
@@ -212,9 +261,11 @@ class ReportGenerator:
 
     @staticmethod
     def _fallback_salary(rec: RecommendationResult) -> str:
+        direction = "증가" if rec.salary_change_signal >= 0 else "감소"
+        amount = f"{abs(rec.salary_change_signal):,}원"
         return (
-            f"연봉 변화 추정 신호는 {rec.salary_change_signal}입니다. "
-            "이는 국민연금 고지금액 기반 참고값이며 실제 급여 변화와 "
+            f"연봉 변화 추정 신호는 {amount} {direction}입니다. "
+            "이는 국민연금 고지금액과 직원 수 기반 참고값이며 실제 급여 변화와 "
             "다를 수 있습니다."
         )
 

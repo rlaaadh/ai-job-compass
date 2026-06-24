@@ -16,14 +16,26 @@ export interface AIReport {
   hiring_comment: string
 }
 
+export interface MonthlyEmployeeStat {
+  year_month: string
+  employee_count: number
+  new_joiners: number
+  leavers: number
+}
+
 export interface HealthScore {
   seq: number
   name: string
+  employee_count: number | null
   health_score: number       // 0-100
   grade: string              // 매우 좋음 / 좋음 / 보통 / 주의 / 위험
   growth: number             // 0-35
   stability: number          // 0-30
   hiring_activity: number    // 0-15
+  size_fit: number           // 0-10
+  salary_signal: number      // 0-10 (참고값)
+  recent_employee_change_pct: number | null
+  monthly_employee_stats: MonthlyEmployeeStat[]
   breakdown: Record<string, unknown>
   ai_report: AIReport | null
 }
@@ -46,6 +58,7 @@ export interface CompareResult {
 export interface CompareRequest {
   current_seq: number
   target_seq: number
+  role?: string | null
 }
 
 export interface UserProfile {

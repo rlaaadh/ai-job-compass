@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.routers import company, comparison
 
 app = FastAPI(
-    title="AI 이직 나침반",
+    title="이직각",
     description="국민연금 데이터 기반 기업 건강도 & 이직 추천도 API",
     version="0.1.0",
 )
@@ -26,4 +26,4 @@ app.include_router(comparison.router)
 
 @app.get("/")
 async def root():
-    return {"message": "AI 이직 나침반 API", "docs": "/docs"}
+    return {"message": "이직각 API", "docs": "/docs"}

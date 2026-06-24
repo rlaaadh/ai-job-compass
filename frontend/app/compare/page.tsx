@@ -3,12 +3,19 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import Chip from "@mui/material/Chip";
 import { api } from "@/lib/api";
-import type { CompareResult, HealthScore } from "@/lib/types";
+import type { CompareResult, HealthScore, UserProfile } from "@/lib/types";
 import { gradeColor, verdictColor } from "@/lib/colors";
 import CircleGauge from "@/components/CircleGauge";
 import ScoreBreakdown from "@/components/ScoreBreakdown";
 import AIReportCard from "@/components/AIReportCard";
+
+function formatSignedWon(amount: number): string {
+  return `${amount > 0 ? "+" : ""}${amount.toLocaleString()}원`;
+}
 
 function CompanyColumn({
   title,
@@ -31,17 +38,22 @@ function CompanyColumn({
           grade={health.grade}
           size={140}
         />
-        <span
-          className="rounded-full px-3 py-1 text-sm font-semibold text-white"
-          style={{ backgroundColor: gradeColor(health.grade) }}
-        >
-          {health.grade}
-        </span>
+        <Chip
+          label={health.grade}
+          size="small"
+          sx={{
+            backgroundColor: gradeColor(health.grade),
+            color: "white",
+            fontWeight: 600,
+          }}
+        />
       </div>
       <ScoreBreakdown
         growth={health.growth}
         stability={health.stability}
         hiring_activity={health.hiring_activity}
+        size_fit={health.size_fit}
+        salary_signal={health.salary_signal}
       />
     </div>
   );
@@ -55,6 +67,18 @@ function CompareContent() {
   const [result, setResult] = useState<CompareResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profileRole, setProfileRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("userProfile");
+    if (!raw) return;
+    try {
+      const profile: UserProfile = JSON.parse(raw);
+      setProfileRole(profile.role ?? null);
+    } catch {
+      // ignore malformed data
+    }
+  }, []);
 
   useEffect(() => {
     if (!currentSeq || !targetSeq) {
@@ -69,6 +93,7 @@ function CompareContent() {
       .compare({
         current_seq: Number(currentSeq),
         target_seq: Number(targetSeq),
+        role: profileRole,
       })
       .then((data) => {
         if (active) setResult(data);
@@ -83,7 +108,7 @@ function CompareContent() {
     return () => {
       active = false;
     };
-  }, [currentSeq, targetSeq]);
+  }, [currentSeq, profileRole, targetSeq]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -95,13 +120,13 @@ function CompareContent() {
       </Link>
 
       {isLoading && (
-        <p className="text-center text-sm text-[#64748b]">비교 중...</p>
+        <div className="flex justify-center py-12">
+          <CircularProgress size={40} />
+        </div>
       )}
 
       {error && !isLoading && (
-        <p className="rounded-lg bg-[#fef2f2] px-4 py-3 text-sm text-[#ef4444]">
-          {error}
-        </p>
+        <Alert severity="error">{error}</Alert>
       )}
 
       {result && !isLoading && (
@@ -115,15 +140,20 @@ function CompareContent() {
             >
               {Math.round(result.recommendation_score)}
             </p>
-            <span
-              className="rounded-full px-4 py-1.5 text-base font-semibold text-white"
-              style={{ backgroundColor: verdictColor(result.verdict) }}
-            >
-              {result.verdict}
-            </span>
+            <Chip
+              label={result.verdict}
+              sx={{
+                backgroundColor: verdictColor(result.verdict),
+                color: "white",
+                fontWeight: 600,
+                fontSize: "1rem",
+                height: 36,
+                px: 1,
+              }}
+            />
             <p className="text-xs text-[#94a3b8]">
-              연봉 변화 시그널: {result.salary_change_signal > 0 ? "+" : ""}
-              {result.salary_change_signal} (참고값, 실제 급여와 다를 수 있음)
+              연봉 변화 시그널: {formatSignedWon(result.salary_change_signal)} (참고값,
+              실제 급여와 다를 수 있음)
             </p>
           </section>
 
@@ -131,6 +161,20 @@ function CompareContent() {
           <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <CompanyColumn title="현재 회사" health={result.current} />
             <CompanyColumn title="관심 회사" health={result.target} />
+          </section>
+
+          <section className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] p-4">
+            <p className="text-sm font-semibold text-[#1d4ed8]">
+              점수 안내
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[#475569]">
+              총점은 성장성(35) + 안정성(30) + 채용 활동성(15) + 기업 규모(10) +
+              연봉 추정 신호(10)에서 리스크를 감점해 계산해요.
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[#64748b]">
+              연봉 추정 신호는 같은 직무나 연차의 시장 평균과 비교한 값이 아니라,
+              회사의 국민연금 고지금액과 직원 수로 계산한 참고용 지표예요.
+            </p>
           </section>
 
           {/* AI 리포트 */}
@@ -145,7 +189,9 @@ export default function ComparePage() {
   return (
     <Suspense
       fallback={
-        <p className="text-center text-sm text-[#64748b]">불러오는 중...</p>
+        <div className="flex justify-center py-12">
+          <CircularProgress size={40} />
+        </div>
       }
     >
       <CompareContent />

@@ -34,5 +34,6 @@ class RecommendationResult:
     current_company: HealthScoreResult
     target_company: HealthScoreResult
     salary_change_signal: int        # 연봉 변화 추정 (참고값, 실제 급여 아님)
+    role_fit_delta: int = 0          # 직무 적합도 차이 (target - current)
     summary: dict = field(default_factory=dict)    # 비교 근거 요약
     verdict: str = "중립"            # "강력 추천"/"추천"/"중립"/"비추천"

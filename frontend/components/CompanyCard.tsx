@@ -1,6 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import type { CompanyBasic } from "@/lib/types";
 
 interface CompanyCardProps {
@@ -17,16 +21,20 @@ export default function CompanyCard({
   compareDisabled = false,
 }: CompanyCardProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4 transition-shadow hover:shadow-sm">
-      <div>
+    <Card variant="outlined" sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-base font-semibold text-[#0f172a]">
             {company.name}
           </h3>
           {company.industry_name && (
-            <span className="shrink-0 rounded-full bg-[#eff6ff] px-2.5 py-0.5 text-xs font-medium text-[#3b82f6]">
-              {company.industry_name}
-            </span>
+            <Chip
+              label={company.industry_name}
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={{ flexShrink: 0 }}
+            />
           )}
         </div>
         {company.address && (
@@ -37,32 +45,31 @@ export default function CompanyCard({
             직원 수 약 {company.employee_count.toLocaleString()}명
           </p>
         )}
-      </div>
+      </CardContent>
 
-      <div className="flex gap-2">
-        <Link
+      <CardContent sx={{ pt: 0, display: "flex", gap: 1 }}>
+        <Button
+          variant="contained"
+          size="small"
+          component={Link}
           href={`/companies/${company.seq}`}
-          className="flex-1 rounded-lg bg-[#3b82f6] px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-[#2563eb]"
+          fullWidth
         >
           건강도 보기
-        </Link>
+        </Button>
         {onAddToCompare && (
-          <button
-            type="button"
+          <Button
+            variant="outlined"
+            size="small"
             onClick={() => onAddToCompare(company)}
             disabled={!isInCompare && compareDisabled}
-            className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-              isInCompare
-                ? "border-[#10b981] bg-[#ecfdf5] text-[#10b981]"
-                : compareDisabled
-                  ? "cursor-not-allowed border-[#e2e8f0] bg-[#f1f5f9] text-[#cbd5e1]"
-                  : "border-[#e2e8f0] bg-white text-[#64748b] hover:border-[#3b82f6] hover:text-[#3b82f6]"
-            }`}
+            color={isInCompare ? "success" : "primary"}
+            sx={{ whiteSpace: "nowrap", minWidth: 104 }}
           >
-            {isInCompare ? "✓ 선택됨" : "비교에 추가"}
-          </button>
+            {isInCompare ? "✓ 선택됨" : "비교 추가"}
+          </Button>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

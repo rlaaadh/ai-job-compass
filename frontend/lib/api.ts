@@ -14,9 +14,23 @@ async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json()
 }
 
+type SearchCompaniesOptions = {
+  fallback?: boolean
+  signal?: AbortSignal
+}
+
 export const api = {
-  searchCompanies: (name: string, rows = 10) =>
-    fetchJSON<CompanyBasic[]>(`/companies/search?name=${encodeURIComponent(name)}&rows=${rows}`),
+  searchCompanies: (name: string, rows = 10, options: SearchCompaniesOptions = {}) => {
+    const params = new URLSearchParams({
+      name,
+      rows: String(rows),
+      fallback: String(options.fallback ?? true),
+    })
+
+    return fetchJSON<CompanyBasic[]>(`/companies/search?${params.toString()}`, {
+      signal: options.signal,
+    })
+  },
 
   getHealth: (seq: number) =>
     fetchJSON<HealthScore>(`/companies/${seq}/health`),
