@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이직각 검색 구조 비교 문서</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --blue: #3b82f6;
+      --blue-soft: #dbeafe;
+      --emerald: #059669;
+      --emerald-soft: #d1fae5;
+      --rose: #e11d48;
+      --rose-soft: #ffe4e6;
+      --amber: #d97706;
+      --amber-soft: #fef3c7;
+      --slate: #1e293b;
+      --shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(59,130,246,0.12), transparent 22%),
+        linear-gradient(180deg, #fefce8 0%, var(--bg) 20%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .wrap {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 36px 22px 64px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+      color: white;
+      border-radius: 26px;
+      padding: 34px 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: #bfdbfe;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      max-width: 840px;
+      margin: 14px 0 0;
+      color: #dbeafe;
+      font-size: 16px;
+    }
+
+    .section {
+      margin-top: 28px;
+    }
+
+    .section-title {
+      margin-bottom: 14px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2,
+    .card h3 {
+      margin: 0 0 10px;
+      line-height: 1.25;
+    }
+
+    .muted { color: var(--muted); }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.blue { background: var(--blue-soft); color: var(--blue); }
+    .pill.green { background: var(--emerald-soft); color: var(--emerald); }
+    .pill.rose { background: var(--rose-soft); color: var(--rose); }
+    .pill.amber { background: var(--amber-soft); color: var(--amber); }
+
+    .compare {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 18px;
+    }
+
+    .compare-card {
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: white;
+      box-shadow: var(--shadow);
+    }
+
+    .compare-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .compare-head.current { background: var(--amber-soft); }
+    .compare-head.target { background: var(--blue-soft); }
+
+    .compare-body {
+      padding: 22px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .step {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      min-height: 160px;
+    }
+
+    .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--blue);
+      color: white;
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin: 10px 0 0;
+    }
+
+    li + li { margin-top: 6px; }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      background: white;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #f8fafc;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .code {
+      margin-top: 14px;
+      border-radius: 16px;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .callout {
+      border-left: 4px solid var(--blue);
+      background: #eff6ff;
+      border-radius: 16px;
+      padding: 16px 18px;
+    }
+
+    @media (max-width: 760px) {
+      .wrap { padding: 18px 14px 40px; }
+      .hero { padding: 24px 20px; }
+      h1 { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="eyebrow">Search Architecture Benchmark</div>
+      <h1>현재 구조 vs 좋소판별기 스타일 구조</h1>
+      <p>
+        이 문서는 현재 이직각 프로젝트의 검색 구조와, 벤치마킹 대상처럼
+        "타이핑할 때 바로바로 결과가 뜨는 구조"의 차이를 설명하는 기획 문서입니다.
+        핵심은 단순히 프론트 UI 문제가 아니라, 검색 데이터를 어디서 가져오고
+        어떤 방식으로 준비해두느냐의 차이입니다.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-title">한 줄 요약</div>
+      <div class="callout">
+        지금 프로젝트는 <strong>사용자가 검색할 때마다 공공 API에 바로 물어보는 구조</strong>이고,
+        벤치마크 서비스 같은 빠른 검색 UX는 보통
+        <strong>미리 저장해둔 자체 데이터베이스나 검색 인덱스를 조회하는 구조</strong>입니다.
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">구조 비교</div>
+      <div class="compare">
+        <article class="compare-card">
+          <div class="compare-head current">
+            <h2>현재 이직각 구조</h2>
+            <p class="muted">실시간 공공 API 의존형</p>
+          </div>
+          <div class="compare-body">
+            <ul>
+              <li>사용자가 회사명을 입력함</li>
+              <li>프론트가 백엔드 <code>/companies/search</code> 호출</li>
+              <li>백엔드가 국민연금 API를 실시간 호출</li>
+              <li>응답을 정리해서 프론트에 반환</li>
+            </ul>
+            <div class="pill-row">
+              <span class="pill amber">최신 원본 데이터</span>
+              <span class="pill rose">느릴 수 있음</span>
+              <span class="pill rose">간헐적 503 가능</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="compare-card">
+          <div class="compare-head target">
+            <h2>벤치마크형 구조</h2>
+            <p class="muted">미리 적재된 검색 DB 조회형</p>
+          </div>
+          <div class="compare-body">
+            <ul>
+              <li>사용자가 회사명을 입력함</li>
+              <li>프론트가 검색 API 호출</li>
+              <li>백엔드가 자체 DB/검색 인덱스를 즉시 조회</li>
+              <li>빠른 자동완성 결과를 바로 반환</li>
+            </ul>
+            <div class="pill-row">
+              <span class="pill blue">빠른 응답</span>
+              <span class="pill green">안정적 UX</span>
+              <span class="pill amber">배치 적재 필요</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">왜 체감 속도가 차이나는가</div>
+      <div class="grid three">
+        <article class="card">
+          <h3>1. 데이터 준비 상태</h3>
+          <p class="muted">
+            현재 구조는 검색할 때마다 원격 서버에서 새로 데이터를 받아옵니다.
+            반면 벤치마크형은 이미 저장된 데이터를 바로 조회합니다.
+          </p>
+        </article>
+        <article class="card">
+          <h3>2. 외부 API 의존성</h3>
+          <p class="muted">
+            공공 API는 느리거나 불안정할 수 있습니다. 자체 DB 검색은 우리 서비스 안에서 끝나기 때문에 훨씬 예측 가능합니다.
+          </p>
+        </article>
+        <article class="card">
+          <h3>3. 검색 최적화 가능 여부</h3>
+          <p class="muted">
+            자체 DB는 인덱스, LIKE 검색, 전문 검색, 추천 검색어 같은 최적화가 가능하지만,
+            공공 API는 제공되는 파라미터 범위 안에서만 써야 합니다.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">현재 구조의 흐름</div>
+      <div class="flow">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>사용자 입력</h3>
+          <p class="muted">예: <code>풀무원</code> 입력</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>프론트 요청</h3>
+          <p class="muted"><code>/api/companies/search?name=풀무원</code> 호출</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>백엔드 프록시</h3>
+          <p class="muted">FastAPI가 요청을 받음</p>
+        </div>
+        <div class="step">
+          <div class="num">4</div>
+          <h3>국민연금 API 호출</h3>
+          <p class="muted">백엔드가 외부 공공 API에 직접 질의</p>
+        </div>
+        <div class="step">
+          <div class="num">5</div>
+          <h3>응답 정리</h3>
+          <p class="muted">필요 필드만 추려서 JSON으로 반환</p>
+        </div>
+        <div class="step">
+          <div class="num">6</div>
+          <h3>화면 반영</h3>
+          <p class="muted">드롭다운 옵션 표시</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">벤치마크형 구조의 흐름</div>
+      <div class="flow">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>배치 수집</h3>
+          <p class="muted">백엔드가 미리 국민연금 데이터를 수집</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>DB 저장</h3>
+          <p class="muted">회사 검색용 테이블에 적재</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>인덱스 생성</h3>
+          <p class="muted">회사명 검색이 빠르도록 준비</p>
+        </div>
+        <div class="step">
+          <div class="num">4</div>
+          <h3>사용자 입력</h3>
+          <p class="muted">예: <code>풀무원</code> 입력</p>
+        </div>
+        <div class="step">
+          <div class="num">5</div>
+          <h3>즉시 DB 조회</h3>
+          <p class="muted">외부 API가 아니라 내부 DB에서 검색</p>
+        </div>
+        <div class="step">
+          <div class="num">6</div>
+          <h3>빠른 결과 반환</h3>
+          <p class="muted">자동완성 UX가 안정적이고 빠름</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">현재 구조의 장단점</div>
+      <div class="grid two">
+        <article class="card">
+          <h2>장점</h2>
+          <ul>
+            <li>초기 구현이 단순합니다.</li>
+            <li>원본 공공 데이터를 바로 조회하므로 별도 적재 작업이 적습니다.</li>
+            <li>MVP 단계에서 "일단 동작하는 검색"을 빠르게 만들 수 있습니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h2>단점</h2>
+          <ul>
+            <li>검색 속도가 외부 공공 API 상태에 직접 영향을 받습니다.</li>
+            <li>자동완성처럼 연속 요청이 많은 UI와 궁합이 좋지 않습니다.</li>
+            <li>503, timeout, socket hang up 같은 예외가 UX에 바로 드러날 수 있습니다.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">벤치마크형 구조의 장단점</div>
+      <div class="grid two">
+        <article class="card">
+          <h2>장점</h2>
+          <ul>
+            <li>검색 응답이 빠르고 예측 가능합니다.</li>
+            <li>자동완성 UX가 훨씬 자연스럽습니다.</li>
+            <li>검색 품질 개선(정렬, 추천, 인기순, 오타 보정)이 쉽습니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h2>단점</h2>
+          <ul>
+            <li>배치 수집/동기화 로직을 추가로 만들어야 합니다.</li>
+            <li>DB 설계와 업데이트 전략이 필요합니다.</li>
+            <li>"최신 원본 데이터"와 "우리 DB 반영 시점" 사이에 시간차가 생깁니다.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">기획 관점에서의 차이</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th>현재 구조</th>
+              <th>벤치마크형 구조</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>검색 데이터 원천</td>
+              <td>검색 시점의 국민연금 API</td>
+              <td>미리 적재한 자체 DB/검색 인덱스</td>
+            </tr>
+            <tr>
+              <td>응답 속도</td>
+              <td>외부 API 상태에 따라 달라짐</td>
+              <td>대체로 빠르고 일정함</td>
+            </tr>
+            <tr>
+              <td>안정성</td>
+              <td>503/끊김 가능</td>
+              <td>상대적으로 높음</td>
+            </tr>
+            <tr>
+              <td>자동완성 적합성</td>
+              <td>낮음</td>
+              <td>높음</td>
+            </tr>
+            <tr>
+              <td>초기 구현 난이도</td>
+              <td>낮음</td>
+              <td>중간 이상</td>
+            </tr>
+            <tr>
+              <td>확장성</td>
+              <td>제한적</td>
+              <td>높음</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">이직각이 벤치마크형으로 가려면</div>
+      <div class="grid three">
+        <article class="card">
+          <h3>1단계: 회사 검색용 DB 만들기</h3>
+          <p class="muted">
+            회사명, 산업명, 직원 수, 최신 월 데이터 등을 저장하는 검색용 테이블을 구성합니다.
+          </p>
+        </article>
+        <article class="card">
+          <h3>2단계: 배치 수집 추가</h3>
+          <p class="muted">
+            국민연금 API를 사용자 요청 때마다 부르지 않고, 정해진 주기로 수집해서 DB를 업데이트합니다.
+          </p>
+        </article>
+        <article class="card">
+          <h3>3단계: 검색 API를 DB 기반으로 교체</h3>
+          <p class="muted">
+            <code>/companies/search</code> 가 더 이상 외부 API를 직접 치지 않고 DB를 검색하게 바꿉니다.
+          </p>
+        </article>
+        <article class="card">
+          <h3>4단계: 상세 분석만 원본/캐시 활용</h3>
+          <p class="muted">
+            자동완성은 DB로 빠르게 처리하고, 더 깊은 분석이 필요할 때만 추가 데이터를 불러오는 식으로 분리할 수 있습니다.
+          </p>
+        </article>
+        <article class="card">
+          <h3>5단계: 정렬 전략 강화</h3>
+          <p class="muted">
+            정확도순, 직원 수 기준, 브랜드 인지도, 최근성 같은 정렬 기준을 설계할 수 있습니다.
+          </p>
+        </article>
+        <article class="card">
+          <h3>6단계: UX 최적화</h3>
+          <p class="muted">
+            검색 취소, 이전 요청 무시, 캐시, 추천 검색어, 최근 검색어 같은 UX가 더 자연스럽게 작동합니다.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">추천 방향</div>
+      <div class="grid two">
+        <article class="card">
+          <h2>지금 당장 할 일</h2>
+          <ul>
+            <li>현재 구조는 유지하되, 짧은 검색 차단과 캐시를 더 보강합니다.</li>
+            <li>메인 검색 UX가 깨지지 않게 에러 메시지를 더 부드럽게 다듬습니다.</li>
+            <li>MVP 시연용으로는 충분히 사용할 수 있게 안정화에 집중합니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h2>다음 버전에서 할 일</h2>
+          <ul>
+            <li>검색은 자체 DB 기반으로 전환합니다.</li>
+            <li>공공 API는 배치 수집/업데이트 용도로 격리합니다.</li>
+            <li>벤치마크 서비스 같은 체감 속도는 이 단계에서 비로소 가능해집니다.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">핵심 결론</div>
+      <div class="callout">
+        벤치마크 서비스처럼 "타이핑하자마자 바로 뜨는 검색"을 만들고 싶다면,
+        프론트만 다듬는 것으로는 부족합니다. <strong>검색용 데이터를 우리 서버 안에 미리 저장해 두는 구조 변화</strong>가 필요합니다.
+      </div>
+    </section>
+  </div>
+</body>
+</html>

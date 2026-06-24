@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supabase/Postgres 기준 DB 스키마 문서</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --green: #16a34a;
+      --green-soft: #dcfce7;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --amber: #d97706;
+      --amber-soft: #fef3c7;
+      --shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #ecfdf5 0%, var(--bg) 16%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 36px 22px 68px; }
+    .hero {
+      background: linear-gradient(135deg, #052e16 0%, #166534 100%);
+      color: white;
+      border-radius: 26px;
+      padding: 34px 30px;
+      box-shadow: var(--shadow);
+    }
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: #bbf7d0;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: 38px; line-height: 1.14; letter-spacing: -0.03em; }
+    .hero p { max-width: 860px; margin: 14px 0 0; color: #dcfce7; font-size: 16px; }
+    .section { margin-top: 28px; }
+    .section-title {
+      margin-bottom: 14px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .grid { display: grid; gap: 18px; }
+    .grid.two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .grid.three { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+    .card h2, .card h3 { margin: 0 0 10px; line-height: 1.25; }
+    .muted { color: var(--muted); }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .badge {
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge.green { background: var(--green-soft); color: var(--green); }
+    .badge.blue { background: var(--blue-soft); color: var(--blue); }
+    .badge.amber { background: var(--amber-soft); color: var(--amber); }
+    .table-wrap {
+      overflow-x: auto;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 920px; }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    ul { margin: 10px 0 0; padding-left: 20px; }
+    li + li { margin-top: 6px; }
+    .code {
+      margin-top: 14px;
+      border-radius: 16px;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="eyebrow">Supabase Postgres Schema</div>
+      <h1>Supabase/Postgres 기준 DB 스키마 문서</h1>
+      <p>
+        이 문서는 현재 이직각 프로젝트가 Supabase(Postgres)로 넘어갈 때 기준이 되는
+        핵심 테이블과 컬럼, 인덱스, 관계를 정리한 설계 문서입니다.
+        목표는 회사 검색을 빠르게 만들고, 이후 건강도 계산과 비교 분석까지 자연스럽게 연결하는 것입니다.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-title">핵심 테이블</div>
+      <div class="grid three">
+        <article class="card">
+          <h3><code>companies</code></h3>
+          <p class="muted">검색 결과 목록과 상세 분석의 기준이 되는 메인 테이블</p>
+        </article>
+        <article class="card">
+          <h3><code>company_monthly_stats</code></h3>
+          <p class="muted">월별 직원 수, 입사자, 퇴사자 등 건강도 계산용 테이블</p>
+        </article>
+        <article class="card">
+          <h3><code>company_search_aliases</code></h3>
+          <p class="muted">별칭과 정규화 검색을 담당하는 검색 보조 테이블</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">companies 컬럼</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>컬럼</th>
+              <th>타입</th>
+              <th>목적</th>
+              <th>비고</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>seq</code></td><td>INTEGER PK</td><td>국민연금 사업장 식별자</td><td>상세 조회 키</td></tr>
+            <tr><td><code>name</code></td><td>TEXT</td><td>원본 회사명</td><td>화면 표기용</td></tr>
+            <tr><td><code>normalized_name</code></td><td>TEXT</td><td>법인표기/특수문자 제거한 검색용 이름</td><td>검색 핵심</td></tr>
+            <tr><td><code>name_initials</code></td><td>TEXT</td><td>초성/축약 대비용</td><td>선택 확장</td></tr>
+            <tr><td><code>industry_name</code></td><td>TEXT</td><td>업종명</td><td>검색 결과 보조 정보</td></tr>
+            <tr><td><code>employee_count</code></td><td>INTEGER</td><td>현재 가입자 수</td><td>정렬에 활용</td></tr>
+            <tr><td><code>search_rank</code></td><td>INTEGER</td><td>노출 우선순위</td><td>브랜드/규모/최신성 반영 가능</td></tr>
+            <tr><td><code>data_created_ym</code></td><td>TEXT</td><td>원본 데이터 기준 년월</td><td>최신성 체크</td></tr>
+            <tr><td><code>synced_at</code></td><td>TIMESTAMP</td><td>우리 DB 적재 시점</td><td>배치 관리용</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">company_search_aliases 역할</div>
+      <div class="grid two">
+        <article class="card">
+          <h2>왜 필요한가</h2>
+          <ul>
+            <li><code>(주)풀무원</code> 와 <code>풀무원</code> 을 같은 검색어로 찾기 위해</li>
+            <li><code>주식회사</code> 같은 표기를 제거한 별칭을 별도 저장하기 위해</li>
+            <li>향후 브랜드명, 줄임말, 오타 보정 전략으로 확장하기 위해</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h2>대표 컬럼</h2>
+          <pre class="code">id
+seq
+alias_text
+normalized_alias_text
+alias_type
+created_at</pre>
+          <div class="badge-row">
+            <span class="badge blue">official</span>
+            <span class="badge green">normalized</span>
+            <span class="badge amber">brand</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">인덱스 전략</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>인덱스명</th>
+              <th>대상</th>
+              <th>용도</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>idx_companies_name</code></td><td><code>companies(name)</code></td><td>기본 이름 조회</td></tr>
+            <tr><td><code>idx_companies_normalized_name</code></td><td><code>companies(normalized_name)</code></td><td>자동완성 prefix 검색</td></tr>
+            <tr><td><code>idx_companies_employee_count</code></td><td><code>companies(employee_count)</code></td><td>규모순 정렬</td></tr>
+            <tr><td><code>idx_monthly_stats_seq_ym</code></td><td><code>company_monthly_stats(seq, year_month)</code></td><td>상세 분석 빠르게 조회</td></tr>
+            <tr><td><code>idx_aliases_normalized_alias</code></td><td><code>company_search_aliases(normalized_alias_text)</code></td><td>별칭 기반 검색</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">추천 검색 쿼리 방향</div>
+      <div class="grid two">
+        <article class="card">
+          <h2>1차 검색</h2>
+          <p class="muted">정규화된 이름의 앞부분(prefix) 일치 우선</p>
+          <pre class="code">WHERE normalized_name LIKE :query || '%'
+ORDER BY search_rank DESC, employee_count DESC
+LIMIT 10</pre>
+        </article>
+        <article class="card">
+          <h2>2차 보조 검색</h2>
+          <p class="muted">별칭/부분일치 보조</p>
+          <pre class="code">JOIN company_search_aliases a ON a.seq = c.seq
+WHERE a.normalized_alias_text LIKE :query || '%'
+ORDER BY c.search_rank DESC, c.employee_count DESC
+LIMIT 10</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">현재 코드에 반영한 방향</div>
+      <div class="grid two">
+        <article class="card">
+          <h2>모델 반영</h2>
+          <ul>
+            <li><code>Company.normalized_name</code></li>
+            <li><code>Company.name_initials</code></li>
+            <li><code>Company.search_rank</code></li>
+            <li><code>CompanySearchAlias</code> 모델</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h2>연결 반영</h2>
+          <ul>
+            <li><code>SUPABASE_DB_URL</code> 우선</li>
+            <li>없으면 기존 SQLite fallback</li>
+            <li>즉, 로컬 개발과 Supabase 전환을 병행할 수 있게 함</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">다음 구현 단계</div>
+      <div class="grid three">
+        <article class="card">
+          <h3>1. Postgres용 SQL 작성</h3>
+          <p class="muted">Supabase SQL Editor에 붙여 넣을 실제 스키마 SQL 준비</p>
+        </article>
+        <article class="card">
+          <h3>2. 적재 스크립트 작성</h3>
+          <p class="muted">공공 API 데이터를 companies / aliases / stats 에 저장</p>
+        </article>
+        <article class="card">
+          <h3>3. 검색 API 전환</h3>
+          <p class="muted">/companies/search 를 DB 조회 기반으로 교체</p>
+        </article>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

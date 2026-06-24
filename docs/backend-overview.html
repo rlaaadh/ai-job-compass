@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이직각 백엔드 구조 설명서</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --blue: #3b82f6;
+      --blue-soft: #dbeafe;
+      --green: #0f766e;
+      --green-soft: #ccfbf1;
+      --amber: #d97706;
+      --amber-soft: #fef3c7;
+      --slate: #1e293b;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.10), transparent 28%),
+        linear-gradient(180deg, #fff7ed 0%, var(--bg) 18%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 64px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: white;
+      border-radius: 24px;
+      padding: 36px 32px;
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #bfdbfe;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 16px 0 0;
+      color: #dbeafe;
+      font-size: 16px;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 14px 16px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .section {
+      margin-top: 28px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2,
+    .card h3 {
+      margin: 0 0 10px;
+      line-height: 1.25;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tag.blue { background: var(--blue-soft); color: var(--blue); }
+    .tag.green { background: var(--green-soft); color: var(--green); }
+    .tag.amber { background: var(--amber-soft); color: var(--amber); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .flow-step {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      position: relative;
+      min-height: 180px;
+    }
+
+    .flow-step .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--blue);
+      color: white;
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin: 10px 0 0;
+    }
+
+    li + li { margin-top: 6px; }
+
+    .endpoint {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: white;
+    }
+
+    .endpoint-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: #f8fafc;
+      flex-wrap: wrap;
+    }
+
+    .method {
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: white;
+    }
+
+    .method.get { background: var(--green); }
+    .method.post { background: var(--blue); }
+
+    .path {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 14px;
+      color: var(--slate);
+      font-weight: 700;
+    }
+
+    .endpoint-body {
+      padding: 18px;
+    }
+
+    .file-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .file-table th,
+    .file-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .file-table th {
+      background: #f8fafc;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .code {
+      margin-top: 14px;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 16px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .callout {
+      border-left: 4px solid var(--blue);
+      background: #eff6ff;
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+
+    @media (max-width: 760px) {
+      .wrap { padding: 20px 14px 40px; }
+      .hero { padding: 24px 20px; }
+      h1 { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="eyebrow">Backend Guide</div>
+      <h1>이직각 백엔드 구조 설명서</h1>
+      <p>
+        이 문서는 "백엔드를 처음 보는 사람"을 기준으로, 현재 이직각 프로젝트의
+        서버가 왜 필요한지, 어떤 API를 제공하는지, 각 Python 파일이 무슨 역할을 하는지
+        쉽게 풀어 설명한 문서입니다.
+      </p>
+      <div class="hero-stats">
+        <div class="stat">
+          <strong>FastAPI</strong>
+          <span>서버 프레임워크</span>
+        </div>
+        <div class="stat">
+          <strong>3개</strong>
+          <span>주요 외부 연동 축</span>
+        </div>
+        <div class="stat">
+          <strong>3개</strong>
+          <span>핵심 API 엔드포인트</span>
+        </div>
+        <div class="stat">
+          <strong>5개</strong>
+          <span>주요 백엔드 레이어</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">왜 백엔드가 필요한가</div>
+      <div class="grid two">
+        <article class="card">
+          <h2>프론트만으로 처리하기 어려운 이유</h2>
+          <ul>
+            <li>국민연금 API 키를 브라우저에 직접 노출하면 보안상 위험합니다.</li>
+            <li>공공 API는 간헐적으로 실패하거나 느려질 수 있어 재시도, 캐시, 예외 처리가 필요합니다.</li>
+            <li>점수 계산과 비교 로직은 화면이 아니라 서버가 맡는 편이 구조적으로 안정적입니다.</li>
+            <li>AI 해석도 API 키 보호와 응답 형식 통제가 필요하므로 백엔드가 중간에 있어야 합니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h2>이 프로젝트에서 백엔드가 하는 일</h2>
+          <div class="tag-row">
+            <span class="tag blue">API 키 보호</span>
+            <span class="tag blue">국민연금 API 호출</span>
+            <span class="tag green">검색 결과 정제</span>
+            <span class="tag green">건강도 계산</span>
+            <span class="tag amber">AI 리포트 생성</span>
+          </div>
+          <p class="muted">
+            프론트는 사용자 화면과 입력을 담당하고, 백엔드는 "외부 데이터 가져오기 + 계산 + 응답 만들기"를 맡습니다.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">전체 흐름</div>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="num">1</div>
+          <h3>프론트 요청</h3>
+          <p class="muted">사용자가 회사명을 검색하거나, 건강도/비교 분석 버튼을 누릅니다.</p>
+        </div>
+        <div class="flow-step">
+          <div class="num">2</div>
+          <h3>FastAPI 라우터</h3>
+          <p class="muted">어떤 API를 호출했는지 보고 해당 Python 함수로 요청을 보냅니다.</p>
+        </div>
+        <div class="flow-step">
+          <div class="num">3</div>
+          <h3>NPSClient 호출</h3>
+          <p class="muted">국민연금 공공 API에서 원본 데이터를 가져옵니다.</p>
+        </div>
+        <div class="flow-step">
+          <div class="num">4</div>
+          <h3>정제 + 계산</h3>
+          <p class="muted">원본 JSON을 Company 모델로 바꾸고 건강도/이직 추천도를 계산합니다.</p>
+        </div>
+        <div class="flow-step">
+          <div class="num">5</div>
+          <h3>AI 해석 추가</h3>
+          <p class="muted">필요하면 AI가 점수를 "설명"하는 문장을 만듭니다.</p>
+        </div>
+        <div class="flow-step">
+          <div class="num">6</div>
+          <h3>응답 반환</h3>
+          <p class="muted">프론트가 쓰기 쉬운 JSON 형식으로 결과를 돌려줍니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">API 목록</div>
+      <div class="grid">
+        <article class="endpoint">
+          <div class="endpoint-head">
+            <span class="method get">GET</span>
+            <span class="path">/companies/search?name={회사명}&rows={개수}</span>
+          </div>
+          <div class="endpoint-body">
+            <strong>역할:</strong> 회사명으로 사업장을 검색합니다.
+            <ul>
+              <li>프론트 자동완성과 메인 검색 버튼에 사용됩니다.</li>
+              <li>2글자 미만 검색은 백엔드에서 바로 빈 배열을 반환합니다.</li>
+              <li>같은 검색어는 60초 동안 캐시해서 외부 API 흔들림을 줄입니다.</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="endpoint">
+          <div class="endpoint-head">
+            <span class="method get">GET</span>
+            <span class="path">/companies/{seq}/health</span>
+          </div>
+          <div class="endpoint-body">
+            <strong>역할:</strong> 특정 회사 하나의 건강도 점수와 AI 해석 리포트를 반환합니다.
+            <ul>
+              <li>회사 상세 페이지에서 사용됩니다.</li>
+              <li>상세 정보와 월별 통계를 가져온 뒤 점수를 계산합니다.</li>
+              <li>AI가 실패해도 점수 자체는 반환하도록 설계돼 있습니다.</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="endpoint">
+          <div class="endpoint-head">
+            <span class="method post">POST</span>
+            <span class="path">/compare</span>
+          </div>
+          <div class="endpoint-body">
+            <strong>역할:</strong> 현재 회사와 관심 회사를 비교해 이직 추천도를 계산합니다.
+            <ul>
+              <li>입력값은 <code>current_seq</code>, <code>target_seq</code> 입니다.</li>
+              <li>두 회사의 건강도를 각각 계산한 뒤, 그 차이를 기반으로 추천 점수를 냅니다.</li>
+              <li>AI는 "추천 이유 설명"을 만드는 데만 사용합니다.</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">폴더별 역할</div>
+      <div class="card">
+        <table class="file-table">
+          <thead>
+            <tr>
+              <th>폴더</th>
+              <th>역할</th>
+              <th>쉽게 말하면</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>src/api/</code></td>
+              <td>HTTP 요청을 받는 입구</td>
+              <td>프론트에서 들어온 요청을 어느 함수로 보낼지 결정하는 문</td>
+            </tr>
+            <tr>
+              <td><code>src/pipeline/</code></td>
+              <td>국민연금 API 연동</td>
+              <td>외부 데이터를 실제로 가져오는 전화기</td>
+            </tr>
+            <tr>
+              <td><code>src/scoring/</code></td>
+              <td>점수 계산 규칙</td>
+              <td>회사 건강도를 숫자로 계산하는 계산기</td>
+            </tr>
+            <tr>
+              <td><code>src/ai/</code></td>
+              <td>AI 해석 리포트</td>
+              <td>숫자를 사람이 읽기 쉬운 설명문으로 바꾸는 번역기</td>
+            </tr>
+            <tr>
+              <td><code>src/db/</code></td>
+              <td>데이터 모델과 DB 구조</td>
+              <td>나중에 데이터를 저장할 때 기준이 되는 설계도</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">주요 Python 파일 설명</div>
+      <div class="grid two">
+        <article class="card">
+          <h3><code>src/main.py</code></h3>
+          <p class="muted">백엔드 서버의 시작점입니다.</p>
+          <ul>
+            <li>FastAPI 앱을 생성합니다.</li>
+            <li>CORS 설정을 추가합니다.</li>
+            <li><code>company</code>, <code>comparison</code> 라우터를 연결합니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><code>src/api/routers/company.py</code></h3>
+          <p class="muted">회사 검색과 건강도 조회 API가 들어 있습니다.</p>
+          <ul>
+            <li><code>/companies/search</code> 구현</li>
+            <li><code>/companies/{seq}/health</code> 구현</li>
+            <li>검색 캐시, 짧은 검색어 차단, 예외 처리 담당</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><code>src/api/routers/comparison.py</code></h3>
+          <p class="muted">두 회사를 비교하는 API입니다.</p>
+          <ul>
+            <li>현재 회사와 관심 회사 데이터를 각각 가져옵니다.</li>
+            <li>건강도 점수를 2번 계산합니다.</li>
+            <li>최종 이직 추천도와 AI 코멘트를 묶어 응답합니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><code>src/api/deps.py</code></h3>
+          <p class="muted">라우터가 공통으로 쓰는 보조 함수 모음입니다.</p>
+          <ul>
+            <li>NPS 원본 JSON → Company 객체 변환</li>
+            <li>월별 통계 JSON → CompanyMonthlyStats 변환</li>
+            <li>건강도 점수 + AI 리포트 → 최종 응답 JSON 조립</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><code>src/pipeline/nps_client.py</code></h3>
+          <p class="muted">국민연금 공공 API 호출 전용 클라이언트입니다.</p>
+          <ul>
+            <li><code>.env</code>에서 <code>NPS_API_KEY</code>를 읽습니다.</li>
+            <li>회사 검색, 상세 조회, 월별 통계 조회 메서드를 제공합니다.</li>
+            <li>네트워크 실패 시 1회 재시도합니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><code>src/scoring/health_score.py</code></h3>
+          <p class="muted">회사 건강도 계산의 핵심입니다.</p>
+          <ul>
+            <li>성장성, 안정성, 채용 활성도, 규모 적합성, 연봉 신호를 각각 계산합니다.</li>
+            <li>각 항목을 합산하고 리스크 패널티를 빼서 총점을 만듭니다.</li>
+            <li>AI가 나중에 설명할 수 있도록 breakdown 근거도 같이 만듭니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><code>src/scoring/recommendation.py</code></h3>
+          <p class="muted">현재 회사 vs 관심 회사 비교 계산기입니다.</p>
+          <ul>
+            <li>두 회사 총점 차이로 추천 점수를 만듭니다.</li>
+            <li><code>강력 추천 / 추천 / 중립 / 비추천</code> 판정을 만듭니다.</li>
+            <li>연봉 변화 신호는 참고값으로만 제공합니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><code>src/ai/report_generator.py</code></h3>
+          <p class="muted">AI가 점수를 설명하는 문장을 만드는 파일입니다.</p>
+          <ul>
+            <li>Anthropic SDK를 통해 Claude를 호출합니다.</li>
+            <li>키가 없거나 실패하면 fallback 텍스트를 반환합니다.</li>
+            <li>즉, AI가 죽어도 서비스 전체가 죽지 않게 설계돼 있습니다.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3><code>src/db/models.py</code></h3>
+          <p class="muted">DB 테이블 설계에 해당하는 ORM 모델입니다.</p>
+          <ul>
+            <li><code>Company</code>, <code>CompanyMonthlyStats</code>, <code>WithdrawnCompany</code> 정의</li>
+            <li>현재 MVP에서는 DB를 적극 활용하지 않지만, 저장 구조는 미리 준비돼 있습니다.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">중요 로직 예시</div>
+      <div class="grid two">
+        <article class="card">
+          <h3>1. 검색 API 보호 로직</h3>
+          <p class="muted">짧은 검색어 차단 + 캐시 사용 + 외부 API 실패 시 fallback</p>
+          <pre class="code">normalized_name = name.strip()
+if len(normalized_name) &lt; 2:
+    return []
+
+cache_key = (normalized_name, rows)
+cached = _search_cache.get(cache_key)
+if cached and time.time() - cached[0] &lt;= 60:
+    return cached[1]</pre>
+        </article>
+        <article class="card">
+          <h3>2. 원본 JSON을 회사 객체로 변환</h3>
+          <p class="muted">국민연금 API 응답은 프론트가 쓰기 어려워서 서버에서 먼저 정리합니다.</p>
+          <pre class="code">company = Company(seq=seq)
+company.name = raw.get("wkplNm", "")
+company.address = raw.get("wkplRoadNmDtlAddr")
+company.industry_name = raw.get("vldtVlKrnNm")
+company.employee_count = _int(raw.get("jnngpCnt"))</pre>
+        </article>
+        <article class="card">
+          <h3>3. 건강도 점수 계산 방식</h3>
+          <p class="muted">한 번에 계산하는 게 아니라, 항목별 함수로 나눠 계산합니다.</p>
+          <pre class="code">성장성 35점
+안정성 30점
+채용 활성도 15점
+규모 적합성 10점
+연봉 신호 10점
+- 리스크 패널티</pre>
+        </article>
+        <article class="card">
+          <h3>4. AI는 계산이 아니라 해석만 담당</h3>
+          <p class="muted">점수는 코드가 계산하고, AI는 그 숫자가 의미하는 바를 설명합니다.</p>
+          <pre class="code">response = self._client.messages.create(
+    model=_MODEL,
+    max_tokens=_MAX_TOKENS,
+    system=SYSTEM_INSTRUCTION,
+    messages=[{"role": "user", "content": prompt}],
+)</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">응답 형식(스키마)</div>
+      <div class="card">
+        <p>
+          백엔드는 프론트가 쓰기 쉬운 "일정한 JSON 모양"으로 결과를 반환합니다.
+          이 규칙은 <code>src/api/schemas.py</code> 에 정의돼 있습니다.
+        </p>
+        <ul>
+          <li><code>CompanyBasicResponse</code>: 회사 검색 결과 1개</li>
+          <li><code>HealthScoreResponse</code>: 회사 건강도 분석 결과</li>
+          <li><code>CompareRequest</code>: 비교 요청 입력값</li>
+          <li><code>CompareResponse</code>: 이직 추천 비교 결과</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">현재 설계의 특징</div>
+      <div class="grid three">
+        <article class="card">
+          <h3>MVP 친화적</h3>
+          <p class="muted">지금은 DB 저장보다 "외부 API 직접 호출 → 계산 → 응답"에 집중한 구조입니다.</p>
+        </article>
+        <article class="card">
+          <h3>실패에 비교적 강함</h3>
+          <p class="muted">AI 실패 시 fallback, 검색 시 캐시, 비정상 레코드 무시 등 운영 안정성을 조금씩 넣어두었습니다.</p>
+        </article>
+        <article class="card">
+          <h3>확장 가능</h3>
+          <p class="muted">나중에는 DB 캐싱, 배치 수집, 로그인, 통계 대시보드로 확장하기 좋은 구조입니다.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">한 줄 요약</div>
+      <div class="callout">
+        이 프로젝트의 백엔드는 단순히 "API를 하나 만드는 서버"가 아니라,
+        <strong>외부 공공데이터를 안전하게 가져오고</strong>,
+        <strong>그 데이터를 계산 가능한 구조로 정리한 뒤</strong>,
+        <strong>점수와 설명을 만들어 프론트에 전달하는 중간 두뇌</strong> 역할을 합니다.
+      </div>
+    </section>
+  </div>
+</body>
+</html>

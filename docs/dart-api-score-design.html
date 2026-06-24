@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이직각 DART API 조합 및 점수 반영 설계</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --green: #059669;
+      --green-soft: #d1fae5;
+      --amber: #d97706;
+      --amber-soft: #fef3c7;
+      --rose: #e11d48;
+      --rose-soft: #ffe4e6;
+      --shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(37,99,235,0.12), transparent 24%),
+        linear-gradient(180deg, #eff6ff 0%, var(--bg) 18%);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 36px 22px 72px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+      color: #fff;
+      border-radius: 26px;
+      padding: 34px 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: #bfdbfe;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      max-width: 920px;
+      margin: 14px 0 0;
+      color: #dbeafe;
+      font-size: 16px;
+    }
+
+    .section {
+      margin-top: 28px;
+    }
+
+    .section-title {
+      margin-bottom: 14px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2,
+    .card h3 {
+      margin: 0 0 10px;
+      line-height: 1.25;
+    }
+
+    .muted { color: var(--muted); }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge.blue { background: var(--blue-soft); color: var(--blue); }
+    .badge.green { background: var(--green-soft); color: var(--green); }
+    .badge.amber { background: var(--amber-soft); color: var(--amber); }
+    .badge.rose { background: var(--rose-soft); color: var(--rose); }
+
+    .table-wrap {
+      overflow-x: auto;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1120px;
+    }
+
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    ul {
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+
+    li + li { margin-top: 6px; }
+
+    .callout {
+      border-left: 4px solid var(--blue);
+      background: #eff6ff;
+      border-radius: 16px;
+      padding: 16px 18px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .step {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      min-height: 180px;
+    }
+
+    .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--blue);
+      color: white;
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #eff6ff;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 0.95em;
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <span class="eyebrow">DART Score Design</span>
+      <h1>이직각 프로젝트에 필요한 DART API 조합 설계</h1>
+      <p>
+        이 문서는 OpenDART 공식 가이드를 기준으로, 이직각에서 실제로 붙일 만한 DART API를
+        “무슨 API를 쓸지 → 어떤 컬럼으로 저장할지 → 어떤 점수에 반영할지”까지 한 번에 설계한 문서다.
+        핵심 목표는 국민연금 기반 점수의 약점을 보완해 <strong>성장성, 안정성, 기업 규모</strong>를 더 설득력 있게 만드는 것이다.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-title">설계 원칙</div>
+      <div class="grid two">
+        <article class="card">
+          <h2>MVP 기준 API 선택</h2>
+          <p class="muted">
+            처음부터 모든 DART API를 다 붙이지 않고, 현재 점수 체계에 직접 기여하는 API만 우선 붙인다.
+          </p>
+          <div class="badge-row">
+            <span class="badge blue">우선 1순위: 기업개황</span>
+            <span class="badge blue">우선 1순위: 주요계정</span>
+            <span class="badge blue">우선 1순위: 주요재무지표</span>
+            <span class="badge amber">2순위: 전체 재무제표</span>
+            <span class="badge amber">2순위: 회사간 비교 API</span>
+          </div>
+        </article>
+        <article class="card">
+          <h2>점수 반영 원칙</h2>
+          <ul>
+            <li>성장성: 매출 성장, 영업이익 성장, 자산 성장, ROE/ROA 개선 등</li>
+            <li>안정성: 부채비율, 유동비율, 영업현금흐름, 이자보상력 등</li>
+            <li>채용 활동성: DART보다는 국민연금 데이터 유지</li>
+            <li>기업 규모: 직원 수 외에 자산·매출 규모를 함께 반영</li>
+            <li>연봉 추정 신호: DART로 직접 계산하지 않음</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">추천 API 조합표</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>우선순위</th>
+              <th>API</th>
+              <th>용도</th>
+              <th>저장 컬럼</th>
+              <th>저장 테이블</th>
+              <th>점수 반영</th>
+              <th>비고</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>P0</strong></td>
+              <td><strong>고유번호</strong><br /><code>corpCode.xml</code></td>
+              <td>NPS 회사명과 DART 회사를 연결하기 위한 기준 키 확보</td>
+              <td>
+                <code>corp_code</code><br />
+                <code>corp_name</code><br />
+                <code>corp_eng_name</code><br />
+                <code>stock_code</code><br />
+                <code>modify_date</code>
+              </td>
+              <td><code>dart_corp_codes</code></td>
+              <td>직접 점수 반영 없음</td>
+              <td>모든 DART 연동의 시작점. 회사 매핑 실패를 줄이는 필수 데이터</td>
+            </tr>
+            <tr>
+              <td><strong>P0</strong></td>
+              <td><strong>기업개황</strong><br /><code>company.json</code></td>
+              <td>법인 기본 정보, 상장 여부, 업종, 설립일 등 메타데이터 확보</td>
+              <td>
+                <code>corp_code</code><br />
+                <code>corp_name</code><br />
+                <code>stock_code</code><br />
+                <code>corp_cls</code><br />
+                <code>ceo_nm</code><br />
+                <code>induty_code</code><br />
+                <code>est_dt</code><br />
+                <code>acc_mt</code><br />
+                <code>adres</code><br />
+                <code>hm_url</code>
+              </td>
+              <td><code>company_dart_profiles</code></td>
+              <td>
+                <strong>기업 규모</strong>: 상장 여부, 업종 구분 보조 신호<br />
+                <strong>안정성</strong>: 설립연차 보조 신호
+              </td>
+              <td>상장사/비상장사 구분, 설립연차 노출용으로도 유용</td>
+            </tr>
+            <tr>
+              <td><strong>P0</strong></td>
+              <td><strong>단일회사 주요계정 조회</strong></td>
+              <td>매출, 영업이익, 당기순이익, 자산, 부채, 자본, 영업현금흐름 등 핵심 재무 계정 저장</td>
+              <td>
+                <code>biz_year</code><br />
+                <code>reprt_code</code><br />
+                <code>fs_div</code><br />
+                <code>revenue</code><br />
+                <code>operating_income</code><br />
+                <code>net_income</code><br />
+                <code>total_assets</code><br />
+                <code>total_liabilities</code><br />
+                <code>total_equity</code><br />
+                <code>current_assets</code><br />
+                <code>current_liabilities</code><br />
+                <code>operating_cash_flow</code>
+              </td>
+              <td><code>company_financial_accounts</code></td>
+              <td>
+                <strong>성장성</strong>: 매출 증가율, 영업이익 증가율, 순이익 증가율<br />
+                <strong>안정성</strong>: 부채비율, 유동비율, 자본잠식 여부<br />
+                <strong>기업 규모</strong>: 자산·매출 절대 규모
+              </td>
+              <td>이직각 점수 고도화의 핵심. 실제 저장 우선도 가장 높음</td>
+            </tr>
+            <tr>
+              <td><strong>P0</strong></td>
+              <td><strong>단일회사 주요 재무지표 조회</strong></td>
+              <td>수익성, 안정성, 성장성, 활동성 지표를 계산 완료된 형태로 확보</td>
+              <td>
+                <code>biz_year</code><br />
+                <code>reprt_code</code><br />
+                <code>roe</code><br />
+                <code>roa</code><br />
+                <code>debt_ratio</code><br />
+                <code>current_ratio</code><br />
+                <code>operating_margin</code><br />
+                <code>net_margin</code><br />
+                <code>asset_growth_rate</code><br />
+                <code>revenue_growth_rate</code><br />
+                <code>equity_growth_rate</code><br />
+                <code>total_asset_turnover</code>
+              </td>
+              <td><code>company_financial_metrics</code></td>
+              <td>
+                <strong>성장성</strong>: 매출 성장률, 자산 성장률, 자본 성장률<br />
+                <strong>안정성</strong>: 부채비율, 유동비율, ROA<br />
+                <strong>종합 해석</strong>: ROE, 영업이익률, 순이익률
+              </td>
+              <td>주요계정만으로도 계산 가능하지만, API가 이미 지표를 제공하면 구현이 빠름</td>
+            </tr>
+            <tr>
+              <td><strong>P1</strong></td>
+              <td><strong>단일회사 재무제표 조회</strong></td>
+              <td>주요계정 API에 없는 추가 계정과 원천 값 보강</td>
+              <td>
+                <code>account_id</code><br />
+                <code>account_nm</code><br />
+                <code>thstrm_amount</code><br />
+                <code>frmtrm_amount</code><br />
+                <code>ord</code>
+              </td>
+              <td><code>company_financial_statements_raw</code></td>
+              <td>
+                직접 점수 반영보다는<br />
+                <strong>검증/보강용</strong>
+              </td>
+              <td>처음부터 필수는 아님. 원천 디버깅용으로 매우 좋음</td>
+            </tr>
+            <tr>
+              <td><strong>P1</strong></td>
+              <td><strong>회사간 주요 재무지표 비교</strong></td>
+              <td>동일 업종 내 상대 위치 산출용 벤치마크 데이터 확보</td>
+              <td>
+                <code>industry_code</code><br />
+                <code>metric_name</code><br />
+                <code>company_value</code><br />
+                <code>industry_avg</code><br />
+                <code>industry_rank_pct</code>
+              </td>
+              <td><code>company_financial_benchmarks</code></td>
+              <td>
+                <strong>성장성</strong>: 업종 평균 대비 성장률<br />
+                <strong>안정성</strong>: 업종 평균 대비 부채비율·유동비율<br />
+                <strong>기업 규모</strong>: 업종 내 매출/자산 상대 순위
+              </td>
+              <td>“좋다/나쁘다”를 절대값이 아니라 업종 상대값으로 바꿔줄 수 있음</td>
+            </tr>
+            <tr>
+              <td><strong>P2</strong></td>
+              <td><strong>회사간 주요계정 비교</strong></td>
+              <td>업종 내 매출, 자산, 부채 절대값 비교</td>
+              <td>
+                <code>industry_code</code><br />
+                <code>account_name</code><br />
+                <code>company_amount</code><br />
+                <code>industry_avg_amount</code>
+              </td>
+              <td><code>company_financial_benchmarks</code></td>
+              <td>
+                <strong>기업 규모</strong> 보강<br />
+                <strong>성장성/안정성</strong> 보조
+              </td>
+              <td>정교하지만 MVP에서는 우선순위가 낮음</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">점수별 반영안</div>
+      <div class="grid three">
+        <article class="card">
+          <h3>성장성 35점</h3>
+          <ul>
+            <li>NPS: 직원 수 증가율, 입사/퇴사 비율 유지</li>
+            <li>DART 추가: 매출 성장률, 영업이익 성장률, 자산 성장률</li>
+            <li>추천 반영 컬럼: <code>revenue_growth_rate</code>, <code>asset_growth_rate</code>, <code>operating_income</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>안정성 30점</h3>
+          <ul>
+            <li>NPS: 이직률, 인원 변동성 유지</li>
+            <li>DART 추가: 부채비율, 유동비율, ROA, 영업현금흐름</li>
+            <li>추천 반영 컬럼: <code>debt_ratio</code>, <code>current_ratio</code>, <code>operating_cash_flow</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>채용 활동성 15점</h3>
+          <ul>
+            <li>국민연금 데이터 유지</li>
+            <li>DART는 직접 반영하지 않음</li>
+            <li>이유: 공시 데이터는 채용 시점 민감도와 빈도가 낮음</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>기업 규모 10점</h3>
+          <ul>
+            <li>현재: 직원 수 기반 점수</li>
+            <li>DART 추가: 매출 규모, 자산 규모, 자본 규모</li>
+            <li>추천 반영 컬럼: <code>revenue</code>, <code>total_assets</code>, <code>total_equity</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>연봉 추정 신호 10점</h3>
+          <ul>
+            <li>국민연금 고지금액 기반 참고 지표 유지</li>
+            <li>DART는 직접 대체하지 않음</li>
+            <li>이유: DART는 개인 직무·연차별 보상 데이터를 제공하지 않음</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>리스크 감점</h3>
+          <ul>
+            <li>NPS: 급감, 탈퇴 사업장 이력 유지</li>
+            <li>DART 확장 시: 자본잠식, 적자 지속, 현금흐름 악화 감점 가능</li>
+            <li>추천 반영 컬럼: <code>net_income</code>, <code>operating_cash_flow</code>, <code>total_equity</code></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">권장 DB 테이블</div>
+      <div class="grid two">
+        <article class="card">
+          <h2>1. DART 회사 매핑</h2>
+          <ul>
+            <li><code>dart_corp_codes</code>: corp_code, corp_name, stock_code, modify_date</li>
+            <li><code>company_dart_profiles</code>: seq, corp_code, stock_code, corp_cls, induty_code, est_dt, acc_mt</li>
+            <li>핵심 연결 키: <code>companies.seq</code> ↔ <code>company_dart_profiles.seq</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h2>2. 재무 원천 + 계산값</h2>
+          <ul>
+            <li><code>company_financial_accounts</code>: 계정성 금액 원천</li>
+            <li><code>company_financial_metrics</code>: 지표성 계산 결과</li>
+            <li><code>company_financial_benchmarks</code>: 업종 평균/상대 위치</li>
+            <li><code>company_financial_statements_raw</code>: 필요 시 원문 보강</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">실행 순서</div>
+      <div class="flow">
+        <article class="step">
+          <div class="num">1</div>
+          <h3>corp_code 수집</h3>
+          <p class="muted">고유번호 API 전체 ZIP을 내려받아 상장사 목록을 저장한다.</p>
+        </article>
+        <article class="step">
+          <div class="num">2</div>
+          <h3>NPS 회사와 매핑</h3>
+          <p class="muted">회사명, 종목코드, 사업자번호가 있으면 가장 정확하게 연결한다.</p>
+        </article>
+        <article class="step">
+          <div class="num">3</div>
+          <h3>기업개황 적재</h3>
+          <p class="muted">상장 여부, 업종, 설립일, 결산월을 프로필 테이블에 넣는다.</p>
+        </article>
+        <article class="step">
+          <div class="num">4</div>
+          <h3>주요계정 적재</h3>
+          <p class="muted">매출, 이익, 자산, 부채, 자본, 현금흐름을 연도별로 적재한다.</p>
+        </article>
+        <article class="step">
+          <div class="num">5</div>
+          <h3>주요재무지표 적재</h3>
+          <p class="muted">ROE, 부채비율, 유동비율, 성장률을 지표 테이블로 적재한다.</p>
+        </article>
+        <article class="step">
+          <div class="num">6</div>
+          <h3>점수 엔진 반영</h3>
+          <p class="muted">성장성·안정성·기업 규모 항목부터 단계적으로 DART 가중치를 추가한다.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">이직각 기준 최종 추천안</div>
+      <div class="callout">
+        <strong>MVP 조합</strong><br />
+        <code>고유번호</code> + <code>기업개황</code> + <code>단일회사 주요계정 조회</code> + <code>단일회사 주요 재무지표 조회</code><br /><br />
+        이 조합이면 지금 프로젝트에서 가장 부족한 부분인 <strong>재무 기반 성장성</strong>, <strong>재무 기반 안정성</strong>,
+        <strong>직원 수 외 기업 규모 판단</strong>을 바로 보강할 수 있다. 반대로 <strong>채용 활동성</strong>과
+        <strong>연봉 추정 신호</strong>는 여전히 국민연금 데이터가 핵심이므로 DART로 대체하지 않는 것이 맞다.
+      </div>
+      <p class="small">
+        공식 참고 화면: OpenDART 개발가이드의 고유번호, 기업개황, 재무정보조회(단일회사 주요계정/주요 재무지표/재무제표/회사간 비교) 기준으로 설계함.
+      </p>
+    </section>
+  </div>
+</body>
+</html>
