@@ -205,6 +205,12 @@ function CompareContent() {
     }
 
     const cacheKey = buildCompareCacheKey(currentSeq, targetSeq, profileRole);
+    if (!cacheKey) {
+      setError("비교 요청을 준비하지 못했습니다. 다시 시도해주세요.");
+      setIsLoading(false);
+      return;
+    }
+
     if (cacheKey) {
       const cachedResult = loadCachedCompareResult(cacheKey);
       if (cachedResult) {
