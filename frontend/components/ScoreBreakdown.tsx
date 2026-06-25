@@ -3,8 +3,8 @@ import LinearProgress from "@mui/material/LinearProgress";
 interface ScoreBreakdownProps {
   growth: number;
   stability: number;
-  hiring_activity: number;
   size_fit?: number;
+  employee_count?: number | null;
   salary_signal?: number;
 }
 
@@ -13,11 +13,30 @@ interface Item {
   value: number;
   max: number;
   note?: string;
+  helperText?: string;
+}
+
+function getCompanySizeMessage(employeeCount: number | null | undefined): string | undefined {
+  if (employeeCount == null || employeeCount < 0) {
+    return undefined;
+  }
+
+  const formattedCount = employeeCount.toLocaleString();
+
+  if (employeeCount < 5) {
+    return `최근 총 직원수는 ${formattedCount}명으로, 5인 미만 사업장이에요`;
+  }
+  if (employeeCount >= 1_000) {
+    return `최근 총 직원수는 ${formattedCount}명으로, 대기업 수준이에요`;
+  }
+  if (employeeCount >= 300) {
+    return `최근 총 직원수는 ${formattedCount}명으로, 중견 기업 수준이에요`;
+  }
+  return `최근 총 직원수는 ${formattedCount}명으로, 중소 기업 수준이에요`;
 }
 
 function Bar({ item }: { item: Item }) {
   const pct = item.max > 0 ? Math.max(0, Math.min(100, (item.value / item.max) * 100)) : 0;
-  const showLowHiringNote = item.name === "채용 활동성" && item.value <= 5;
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between text-sm">
@@ -47,9 +66,9 @@ function Bar({ item }: { item: Item }) {
           },
         }}
       />
-      {showLowHiringNote && (
+      {item.helperText && (
         <p className="mt-2 text-xs text-[#94a3b8]">
-          최근에 채용을 하고 있지 않는 기업이에요
+          {item.helperText}
         </p>
       )}
     </div>
@@ -59,22 +78,22 @@ function Bar({ item }: { item: Item }) {
 export default function ScoreBreakdown({
   growth,
   stability,
-  hiring_activity,
   size_fit,
+  employee_count,
   salary_signal,
 }: ScoreBreakdownProps) {
   const items: Item[] = [
-    { name: "성장성", value: growth, max: 35 },
-    { name: "안정성", value: stability, max: 30 },
-    { name: "채용 활동성", value: hiring_activity, max: 15 },
+    { name: "성장성", value: growth, max: 40 },
+    { name: "안정성", value: stability, max: 35 },
   ];
 
   if (size_fit !== undefined) {
     items.push({
       name: "기업 규모",
       value: size_fit,
-      max: 10,
-      note: "(직원 수와 규모 변화 흐름 기준)",
+      max: 25,
+      note: "(직원 수 기준)",
+      helperText: getCompanySizeMessage(employee_count),
     });
   }
   if (salary_signal !== undefined) {

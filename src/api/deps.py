@@ -117,7 +117,7 @@ def build_health_response(
             summary=report.summary,
             growth_comment=report.growth_comment,
             stability_comment=report.stability_comment,
-            hiring_comment=report.hiring_comment,
+            size_comment=report.size_comment,
         )
     except Exception:
         ai_report = None

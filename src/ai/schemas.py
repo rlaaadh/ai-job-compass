@@ -14,7 +14,7 @@ class CompanyReport:
     summary: str              # 기업 건강도 자연어 요약 (2-3문장)
     growth_comment: str       # 성장성 해석
     stability_comment: str    # 안정성 해석
-    hiring_comment: str       # 채용 활성도 해석
+    size_comment: str         # 기업 규모 해석
     generated_at: str         # ISO 타임스탬프
 
 

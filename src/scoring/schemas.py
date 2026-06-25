@@ -12,11 +12,11 @@ class HealthScoreResult:
     """
 
     total: int                       # 0-100 (세부 합산 후 0~100 clamp)
-    growth: int                      # 성장성 점수 (0-35)
-    stability: int                   # 안정성 점수 (0-30)
-    hiring_activity: int             # 채용 활성도 점수 (0-15)
-    size_fit: int                    # 규모 적합성 점수 (0-10)
-    salary_signal: int               # 연봉 추정 점수 (0-10) — 당월고지금액 참고값
+    growth: int                      # 성장성 점수 (0-40)
+    stability: int                   # 안정성 점수 (0-35)
+    hiring_activity: int             # 레거시 호환용 필드 (현재 UI/총점에는 미반영)
+    size_fit: int                    # 기업 규모 점수 (0-25, 직원 수 기준)
+    salary_signal: int               # 레거시 호환용 필드 (현재 건강도 총점에는 미반영)
     risk_penalty: int                # 리스크 패널티 (0 이하, 감점)
     breakdown: dict = field(default_factory=dict)  # 각 항목 계산 근거
     grade: str = "보통"              # "매우 좋음"/"좋음"/"보통"/"주의"/"위험"

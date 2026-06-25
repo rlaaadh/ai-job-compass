@@ -25,7 +25,7 @@ class CompanyReportResponse(BaseModel):
     summary: str
     growth_comment: str
     stability_comment: str
-    hiring_comment: str
+    size_comment: str
 
 
 class HealthScoreResponse(BaseModel):

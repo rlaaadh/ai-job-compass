@@ -24,7 +24,6 @@ export default function RootLayout({
                 className="flex items-center gap-2 text-lg font-bold text-[#0f172a]"
               >
                 <span aria-hidden>🧭</span>
-                <span>이직각</span>
               </Link>
               <div className="flex items-center gap-1">
                 <Link

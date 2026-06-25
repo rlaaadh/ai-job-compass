@@ -121,9 +121,8 @@ export default function CompanyDetailPage({
               <ScoreBreakdown
                 growth={health.growth}
                 stability={health.stability}
-                hiring_activity={health.hiring_activity}
                 size_fit={health.size_fit}
-                salary_signal={health.salary_signal}
+                employee_count={health.employee_count}
               />
             </div>
           </section>

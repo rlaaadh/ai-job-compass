@@ -13,7 +13,7 @@ export interface AIReport {
   summary: string
   growth_comment: string
   stability_comment: string
-  hiring_comment: string
+  size_comment: string
 }
 
 export interface MonthlyEmployeeStat {
@@ -29,10 +29,10 @@ export interface HealthScore {
   employee_count: number | null
   health_score: number       // 0-100
   grade: string              // 매우 좋음 / 좋음 / 보통 / 주의 / 위험
-  growth: number             // 0-35
-  stability: number          // 0-30
-  hiring_activity: number    // 0-15
-  size_fit: number           // 0-10
+  growth: number             // 0-40
+  stability: number          // 0-35
+  hiring_activity: number    // 레거시 호환용 필드
+  size_fit: number           // 0-25
   salary_signal: number      // 0-10 (참고값)
   recent_employee_change_pct: number | null
   monthly_employee_stats: MonthlyEmployeeStat[]

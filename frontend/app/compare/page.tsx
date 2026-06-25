@@ -13,10 +13,6 @@ import CircleGauge from "@/components/CircleGauge";
 import ScoreBreakdown from "@/components/ScoreBreakdown";
 import AIReportCard from "@/components/AIReportCard";
 
-function formatSignedWon(amount: number): string {
-  return `${amount > 0 ? "+" : ""}${amount.toLocaleString()}원`;
-}
-
 function CompanyColumn({
   title,
   health,
@@ -51,9 +47,8 @@ function CompanyColumn({
       <ScoreBreakdown
         growth={health.growth}
         stability={health.stability}
-        hiring_activity={health.hiring_activity}
         size_fit={health.size_fit}
-        salary_signal={health.salary_signal}
+        employee_count={health.employee_count}
       />
     </div>
   );
@@ -151,10 +146,6 @@ function CompareContent() {
                 px: 1,
               }}
             />
-            <p className="text-xs text-[#94a3b8]">
-              연봉 변화 시그널: {formatSignedWon(result.salary_change_signal)} (참고값,
-              실제 급여와 다를 수 있음)
-            </p>
           </section>
 
           {/* 좌우 비교 */}
@@ -168,12 +159,12 @@ function CompareContent() {
               점수 안내
             </p>
             <p className="mt-2 text-sm leading-6 text-[#475569]">
-              총점은 성장성(35) + 안정성(30) + 채용 활동성(15) + 기업 규모(10) +
-              연봉 추정 신호(10)에서 리스크를 감점해 계산해요.
+              총점은 성장성(40) + 안정성(35) + 기업 규모(25)로 계산하고,
+              최근 직원 수가 급격히 감소하는 경우에는 리스크를 추가로 감점해요.
             </p>
             <p className="mt-1 text-sm leading-6 text-[#64748b]">
-              연봉 추정 신호는 같은 직무나 연차의 시장 평균과 비교한 값이 아니라,
-              회사의 국민연금 고지금액과 직원 수로 계산한 참고용 지표예요.
+              최근 직원 수 감소나 변동 폭은 성장성과 안정성 판단에 반영되고,
+              기업 규모는 현재 국민연금 가입 직원 수만 기준으로 계산해요.
             </p>
           </section>
 

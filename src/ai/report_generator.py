@@ -127,8 +127,8 @@ class ReportGenerator:
                 or self._fallback_growth(score),
                 stability_comment=str(data.get("stability_comment") or "").strip()
                 or self._fallback_stability(score),
-                hiring_comment=str(data.get("hiring_comment") or "").strip()
-                or self._fallback_hiring(score),
+                size_comment=str(data.get("size_comment") or "").strip()
+                or self._fallback_size(score),
                 generated_at=_now_iso(),
             )
 
@@ -164,7 +164,7 @@ class ReportGenerator:
         return (
             f"{name}의 기업 건강도는 100점 만점에 {score.total}점으로 "
             f"'{score.grade}' 수준입니다. 성장성 {score.growth}점, "
-            f"안정성 {score.stability}점, 채용 활성도 {score.hiring_activity}점으로 "
+            f"안정성 {score.stability}점, 기업 규모 {score.size_fit}점으로 "
             "구성되어 있습니다."
         )
 
@@ -208,26 +208,23 @@ class ReportGenerator:
         return f"{opener} 최근 이직률 추정치는 {turnover_rate * 100:.1f}% 수준으로 반영됐어요."
 
     @staticmethod
-    def _fallback_hiring(score: HealthScoreResult) -> str:
-        hiring_detail = score.breakdown.get("hiring_activity", {})
-        recent_joiners = hiring_detail.get("recent_joiners")
-        months_used = hiring_detail.get("months_used")
-        recent_hire_ratio = hiring_detail.get("recent_hire_ratio")
+    def _fallback_size(score: HealthScoreResult) -> str:
+        size_detail = score.breakdown.get("size_fit", {})
+        employee_count = size_detail.get("employee_count")
 
-        if score.hiring_activity <= 5:
-            opener = "채용 활동은 조용한 편이에요. 최근에는 사람을 공격적으로 뽑고 있는 회사로 보이진 않습니다."
-        elif score.hiring_activity <= 10:
-            opener = "채용 활동은 있는 편이지만 아주 활발하다고 보긴 어려워요. 필요한 자리만 선별해서 채우는 느낌에 가깝습니다."
+        if score.size_fit <= 4:
+            opener = "기업 규모는 작은 편이에요. 조직이 가볍고 빠를 수 있지만 체계 면에서는 확인할 포인트가 더 있을 수 있어요."
+        elif score.size_fit <= 11:
+            opener = "기업 규모는 중소형에 가까워요. 빠른 의사결정과 역할 확장이 장점이 될 수 있습니다."
+        elif score.size_fit <= 19:
+            opener = "기업 규모는 제법 안정적인 편이에요. 어느 정도 조직 체계를 기대해볼 수 있는 수준입니다."
         else:
-            opener = "채용 활동은 꽤 살아 있어요. 최근에도 조직에 새 피를 계속 수혈하는 흐름으로 읽힙니다."
+            opener = "기업 규모는 꽤 큰 편이에요. 인력 풀과 조직 체계 면에서 대형 조직에 가까운 그림입니다."
 
-        if recent_joiners is None or months_used is None or recent_hire_ratio is None:
+        if employee_count is None:
             return opener
 
-        return (
-            f"{opener} 최근 {months_used}개월 국민연금 데이터 기준 신규 가입자는 "
-            f"{recent_joiners}명, 현재 직원 대비 유입 비율은 {recent_hire_ratio * 100:.1f}%로 반영됐어요."
-        )
+        return f"{opener} 현재 국민연금 가입 직원 수는 {int(employee_count):,}명으로 반영됐어요."
 
     def _fallback_company_report(
         self, score: HealthScoreResult, name: str
@@ -236,7 +233,7 @@ class ReportGenerator:
             summary=self._fallback_company_summary(score, name),
             growth_comment=self._fallback_growth(score),
             stability_comment=self._fallback_stability(score),
-            hiring_comment=self._fallback_hiring(score),
+            size_comment=self._fallback_size(score),
             generated_at=_now_iso(),
         )
 

@@ -150,6 +150,7 @@ export default function ProfilePage() {
         <div className="flex flex-col gap-1">
           <Autocomplete
             options={companyResults}
+            forcePopupIcon={false}
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, value) => option.seq === value.seq}
             value={selectedCompany}
@@ -179,7 +180,8 @@ export default function ProfilePage() {
               />
             )}
             renderOption={(props, option) => {
-              const { key, ...rest } = props as React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
+              const { key, ...rest } =
+                props as React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
               return (
                 <li key={key} {...rest}>
                   <span className="font-medium text-[#0f172a]">

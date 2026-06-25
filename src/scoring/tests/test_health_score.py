@@ -50,11 +50,11 @@ class TestHealthScoreNormal(unittest.TestCase):
 
         self.assertIsInstance(result, HealthScoreResult)
         self.assertTrue(0 <= result.total <= 100)
-        self.assertTrue(0 <= result.growth <= 35)
-        self.assertTrue(0 <= result.stability <= 30)
-        self.assertTrue(0 <= result.hiring_activity <= 15)
-        self.assertTrue(0 <= result.size_fit <= 10)
-        self.assertTrue(0 <= result.salary_signal <= 10)
+        self.assertTrue(0 <= result.growth <= 40)
+        self.assertTrue(0 <= result.stability <= 35)
+        self.assertEqual(result.hiring_activity, 0)
+        self.assertTrue(0 <= result.size_fit <= 25)
+        self.assertEqual(result.salary_signal, 0)
         self.assertLessEqual(result.risk_penalty, 0)
         self.assertIn("growth", result.breakdown)
         self.assertEqual(result.breakdown["months_available"], 12)
@@ -72,12 +72,10 @@ class TestHealthScoreNormal(unittest.TestCase):
         )
         self.assertGreater(growing.total, shrinking.total)
 
-    def test_salary_signal_flagged_as_reference(self):
+    def test_salary_signal_removed_from_health_score_breakdown(self):
         company = _make_company(employee_count=100, charge=20_000_000)
         result = calculate_health_score(company, _make_stats(1, 100, 1))
-        self.assertTrue(
-            result.breakdown["salary_signal"].get("is_reference_only")
-        )
+        self.assertNotIn("salary_signal", result.breakdown)
 
     def test_company_size_score_reflects_employee_scale(self):
         medium_company = _make_company(seq=1, name="중소", employee_count=41)
@@ -104,10 +102,9 @@ class TestHealthScorePartial(unittest.TestCase):
         self.assertTrue(0 <= result.total <= 100)
         self.assertFalse(result.breakdown["has_monthly_stats"])
         self.assertEqual(result.breakdown["months_available"], 0)
-        # 부분 점수: 성장성/안정성 중립 점수가 들어감
+        # 부분 점수: 성장성/안정성/기업규모 기준 점수가 들어감
         self.assertGreater(result.growth, 0)
         self.assertGreater(result.stability, 0)
-        # 채용 활성도는 데이터 없으면 0
         self.assertEqual(result.hiring_activity, 0)
 
     def test_empty_list_treated_as_no_stats(self):
@@ -255,9 +252,9 @@ class TestRecommendation(unittest.TestCase):
             total=58,
             growth=20,
             stability=18,
-            hiring_activity=8,
+            hiring_activity=0,
             size_fit=6,
-            salary_signal=5,
+            salary_signal=0,
             risk_penalty=0,
             breakdown={},
             grade="보통",
@@ -266,9 +263,9 @@ class TestRecommendation(unittest.TestCase):
             total=54,
             growth=19,
             stability=17,
-            hiring_activity=7,
+            hiring_activity=0,
             size_fit=6,
-            salary_signal=7,
+            salary_signal=0,
             risk_penalty=0,
             breakdown={},
             grade="보통",

@@ -78,7 +78,7 @@ export default function AIReportCard({ report, type }: AIReportCardProps) {
     : [
         { label: "성장성", text: report.growth_comment },
         { label: "안정성", text: report.stability_comment },
-        { label: "채용 활동", text: report.hiring_comment },
+        { label: "기업 규모", text: report.size_comment },
       ];
 
   return (

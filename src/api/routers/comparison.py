@@ -41,8 +41,12 @@ async def compare_companies(request: CompareRequest) -> CompareResponse:
 
     generator = ReportGenerator()
 
-    current_resp = build_health_response(current_company, current_score, generator)
-    target_resp = build_health_response(target_company, target_score, generator)
+    current_resp = build_health_response(
+        current_company, current_stats, current_score, generator
+    )
+    target_resp = build_health_response(
+        target_company, target_stats, target_score, generator
+    )
 
     ai_report: RecommendationReportResponse | None = None
     try:
