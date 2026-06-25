@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -14,12 +15,16 @@ _WITHDRAWN_BASE = "https://apis.data.go.kr/B552015/NpsScsnBplcInfoInqireServiceV
 
 
 def _load_api_key() -> str:
+    env_value = os.environ.get("NPS_API_KEY")
+    if env_value:
+        return env_value.strip().strip("\"'")
+
     if _ENV_FILE.exists():
         for line in _ENV_FILE.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if line.startswith("NPS_API_KEY="):
                 return line.split("=", 1)[1].strip().strip("\"'")
-    raise EnvironmentError("NPS_API_KEY not found in .env")
+    raise EnvironmentError("NPS_API_KEY not found in environment or .env")
 
 
 def _request(base_url: str, endpoint: str, params: dict[str, Any], retries: int = 2) -> dict:
