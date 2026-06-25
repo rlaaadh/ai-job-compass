@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import HeaderNav from "@/components/HeaderNav";
 import ThemeRegistry from "@/components/ThemeRegistry";
 import "./globals.css";
 
@@ -25,26 +26,7 @@ export default function RootLayout({
               >
                 <span aria-hidden>🧭</span>
               </Link>
-              <div className="flex items-center gap-1">
-                <Link
-                  href="/"
-                  className="rounded-md px-3 py-1.5 text-sm font-medium text-[#64748b] transition-colors hover:bg-[#f1f5f9] hover:text-[#0f172a]"
-                >
-                  홈
-                </Link>
-                <Link
-                  href="/compare"
-                  className="rounded-md px-3 py-1.5 text-sm font-medium text-[#64748b] transition-colors hover:bg-[#f1f5f9] hover:text-[#0f172a]"
-                >
-                  비교하기
-                </Link>
-                <Link
-                  href="/profile"
-                  className="ml-1 rounded-md bg-[#eff6ff] px-3 py-1.5 text-sm font-medium text-[#3b82f6] transition-colors hover:bg-[#dbeafe]"
-                >
-                  내 정보
-                </Link>
-              </div>
+              <HeaderNav />
             </nav>
           </header>
           <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">

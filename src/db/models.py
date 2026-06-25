@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from importlib.util import find_spec
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -140,6 +141,11 @@ def get_engine(db_path: str | Path = _DEFAULT_DB_PATH):
     url = resolve_database_url(db_path)
     connect_args = {}
     if url.startswith("postgresql+psycopg://"):
+        if find_spec("psycopg") is None:
+            raise RuntimeError(
+                "PostgreSQL이 설정되어 있지만 psycopg가 설치되지 않았습니다. "
+                "`.venv`를 활성화하거나 `pip install -r requirements.txt` 후 다시 실행해주세요."
+            )
         # Supabase pooler(pgbouncer) 환경에서는 자동 prepared statement를 끈다.
         connect_args["prepare_threshold"] = None
     return create_engine(url, echo=False, connect_args=connect_args)

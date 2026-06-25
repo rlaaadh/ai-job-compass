@@ -13,6 +13,134 @@ import CircleGauge from "@/components/CircleGauge";
 import ScoreBreakdown from "@/components/ScoreBreakdown";
 import AIReportCard from "@/components/AIReportCard";
 
+const COMPARE_RESULT_CACHE_KEY = "compareResultCache";
+const compareRequestInflight = new Map<string, Promise<CompareResult>>();
+
+type CompareResultCacheEntry = {
+  cacheKey: string;
+  result: CompareResult;
+};
+
+function buildCompareCacheKey(
+  currentSeq: string | null,
+  targetSeq: string | null,
+  role: string | null,
+): string | null {
+  if (!currentSeq || !targetSeq) {
+    return null;
+  }
+
+  return JSON.stringify({
+    currentSeq,
+    targetSeq,
+    role: role ?? null,
+  });
+}
+
+function loadCachedCompareResult(cacheKey: string): CompareResult | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(COMPARE_RESULT_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+
+    const entry = parsed as Partial<CompareResultCacheEntry>;
+    if (entry.cacheKey !== cacheKey || !entry.result) {
+      return null;
+    }
+
+    return entry.result;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedCompareResult(cacheKey: string, result: CompareResult): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const payload: CompareResultCacheEntry = {
+    cacheKey,
+    result,
+  };
+  window.sessionStorage.setItem(COMPARE_RESULT_CACHE_KEY, JSON.stringify(payload));
+}
+
+function loadStoredProfileRole(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem("userProfile");
+    if (!raw) {
+      return null;
+    }
+
+    const profile = JSON.parse(raw) as UserProfile;
+    return profile.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function hasStoredProfileCompany(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    const raw = window.localStorage.getItem("userProfile");
+    if (!raw) {
+      return false;
+    }
+
+    const profile = JSON.parse(raw) as Partial<UserProfile>;
+    return Boolean(profile.company?.seq);
+  } catch {
+    return false;
+  }
+}
+
+function fetchCompareResult(
+  cacheKey: string,
+  currentSeq: string,
+  targetSeq: string,
+  role: string | null,
+): Promise<CompareResult> {
+  const inflight = compareRequestInflight.get(cacheKey);
+  if (inflight) {
+    return inflight;
+  }
+
+  const request = api
+    .compare({
+      current_seq: Number(currentSeq),
+      target_seq: Number(targetSeq),
+      role,
+    })
+    .then((data) => {
+      saveCachedCompareResult(cacheKey, data);
+      return data;
+    })
+    .finally(() => {
+      compareRequestInflight.delete(cacheKey);
+    });
+
+  compareRequestInflight.set(cacheKey, request);
+  return request;
+}
+
 function CompanyColumn({
   title,
   health,
@@ -62,36 +190,39 @@ function CompareContent() {
   const [result, setResult] = useState<CompareResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [profileRole, setProfileRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    const raw = localStorage.getItem("userProfile");
-    if (!raw) return;
-    try {
-      const profile: UserProfile = JSON.parse(raw);
-      setProfileRole(profile.role ?? null);
-    } catch {
-      // ignore malformed data
-    }
-  }, []);
+  const [profileRole] = useState<string | null>(() => loadStoredProfileRole());
+  const [hasProfileCompany] = useState<boolean>(() => hasStoredProfileCompany());
 
   useEffect(() => {
     if (!currentSeq || !targetSeq) {
-      setError("비교할 두 회사를 선택해주세요. (현재 회사 / 관심 회사)");
+      setError(
+        hasProfileCompany
+          ? "비교해볼 다른 회사를 선택해주세요."
+          : "비교할 두 회사를 선택해주세요. (현재 회사 / 관심 회사)",
+      );
       setIsLoading(false);
       return;
     }
+
+    const cacheKey = buildCompareCacheKey(currentSeq, targetSeq, profileRole);
+    if (cacheKey) {
+      const cachedResult = loadCachedCompareResult(cacheKey);
+      if (cachedResult) {
+        setResult(cachedResult);
+        setError(null);
+        setIsLoading(false);
+        return;
+      }
+    }
+
     let active = true;
     setIsLoading(true);
     setError(null);
-    api
-      .compare({
-        current_seq: Number(currentSeq),
-        target_seq: Number(targetSeq),
-        role: profileRole,
-      })
+    fetchCompareResult(cacheKey, currentSeq, targetSeq, profileRole)
       .then((data) => {
-        if (active) setResult(data);
+        if (active) {
+          setResult(data);
+        }
       })
       .catch((e) => {
         if (active)
@@ -103,7 +234,7 @@ function CompareContent() {
     return () => {
       active = false;
     };
-  }, [currentSeq, profileRole, targetSeq]);
+  }, [currentSeq, hasProfileCompany, profileRole, targetSeq]);
 
   return (
     <div className="flex flex-col gap-6">

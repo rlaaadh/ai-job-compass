@@ -7,6 +7,7 @@ import Chip from "@mui/material/Chip";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import { api } from "@/lib/api";
+import { loadCompareCompanies, saveCompareCompanies } from "@/lib/compareStorage";
 import type { HealthScore } from "@/lib/types";
 import { gradeColor } from "@/lib/colors";
 import CircleGauge from "@/components/CircleGauge";
@@ -38,7 +39,9 @@ export default function CompanyDetailPage({
   const [health, setHealth] = useState<HealthScore | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [added, setAdded] = useState(false);
+  const [added, setAdded] = useState(() =>
+    loadCompareCompanies().some((company) => company.seq === seqNum),
+  );
 
   useEffect(() => {
     let active = true;
@@ -63,12 +66,19 @@ export default function CompanyDetailPage({
 
   function addToCompare() {
     if (!health) return;
-    try {
-      sessionStorage.setItem("compare-target-seq", String(health.seq));
-      sessionStorage.setItem("compare-target-name", health.name);
-    } catch {
-      // sessionStorage 사용 불가 시 무시
-    }
+
+    const nextCompany = {
+      seq: health.seq,
+      name: health.name,
+      address: null,
+      industry_name: null,
+      employee_count: health.employee_count,
+      join_status: null,
+    };
+
+    const storedCompanies = loadCompareCompanies();
+    const existing = storedCompanies.filter((company) => company.seq !== nextCompany.seq);
+    saveCompareCompanies([...existing, nextCompany].slice(-2));
     setAdded(true);
   }
 

@@ -11,7 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.db.models import get_session, init_db
+from src.db.models import get_session, init_db, resolve_database_url
 from src.pipeline.etl import sync_company_search_seed
 from src.pipeline.nps_client import NPSClient
 
@@ -79,6 +79,12 @@ def main() -> int:
     if not names:
         print("동기화할 회사명을 --name 또는 --file 로 전달해주세요.")
         return 1
+
+    database_url = resolve_database_url(args.db_path)
+    if database_url.startswith("sqlite:///"):
+        print(f"[DB] using local SQLite: {args.db_path}")
+    else:
+        print("[DB] using configured PostgreSQL from environment")
 
     init_db(args.db_path)
     session = get_session(args.db_path)

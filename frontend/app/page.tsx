@@ -10,6 +10,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Chip from "@mui/material/Chip";
 import Alert from "@mui/material/Alert";
 import { api } from "@/lib/api";
+import { loadCompareCompanies, saveCompareCompanies } from "@/lib/compareStorage";
 import type { CompanyBasic, UserProfile } from "@/lib/types";
 import CompanyCard from "@/components/CompanyCard";
 import HighlightedText from "@/components/HighlightedText";
@@ -26,9 +27,27 @@ function syncCompareListWithProfile(
   return [profileCompany, ...targetOnly].slice(0, 2);
 }
 
+function loadStoredProfile(): UserProfile | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem("userProfile");
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as UserProfile;
+  } catch {
+    return null;
+  }
+}
+
 export default function HomePage() {
   const router = useRouter();
   const dropdownAbortRef = useRef<AbortController | null>(null);
+  const hasSyncedCompareListRef = useRef(false);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
@@ -46,16 +65,29 @@ export default function HomePage() {
   const [compareList, setCompareList] = useState<CompanyBasic[]>([]);
   const safeSearchQuery = normalizeQuery(searchQuery);
 
+  function updateCompareList(updater: (prev: CompanyBasic[]) => CompanyBasic[]) {
+    setCompareList((prev) => updater(prev));
+  }
+
   useEffect(() => {
-    const raw = localStorage.getItem("userProfile");
-    if (!raw) return;
-    try {
-      const nextProfile: UserProfile = JSON.parse(raw);
-      setProfile(nextProfile);
-      setCompareList((prev) => syncCompareListWithProfile(nextProfile.company, prev));
-    } catch {
-      // ignore
+    if (!hasSyncedCompareListRef.current) {
+      hasSyncedCompareListRef.current = true;
+      return;
     }
+
+    saveCompareCompanies(compareList);
+  }, [compareList]);
+
+  useEffect(() => {
+    const storedProfile = loadStoredProfile();
+    const storedCompareCompanies = loadCompareCompanies();
+
+    setProfile(storedProfile);
+    setCompareList(
+      storedProfile
+        ? syncCompareListWithProfile(storedProfile.company, storedCompareCompanies)
+        : storedCompareCompanies,
+    );
   }, []);
 
   useEffect(() => {
@@ -143,7 +175,7 @@ export default function HomePage() {
   }
 
   function toggleCompare(company: CompanyBasic) {
-    setCompareList((prev) => {
+    updateCompareList((prev) => {
       if (profile && company.seq === profile.company.seq) {
         return syncCompareListWithProfile(profile.company, prev);
       }
@@ -154,14 +186,14 @@ export default function HomePage() {
       }
 
       if (profile) {
-        const [current, target] = syncCompareListWithProfile(profile.company, prev);
-        if (target) {
-          return [current, company];
-        }
+        const [current] = syncCompareListWithProfile(profile.company, prev);
         return [current, company];
       }
 
-      if (prev.length >= 2) return prev;
+      if (prev.length >= 2) {
+        return prev;
+      }
+
       return [...prev, company];
     });
   }
@@ -174,7 +206,7 @@ export default function HomePage() {
 
   function addMyCompany() {
     if (!profile) return;
-    setCompareList((prev) => syncCompareListWithProfile(profile.company, prev));
+    updateCompareList((prev) => syncCompareListWithProfile(profile.company, prev));
   }
 
   function goCompare() {
@@ -339,38 +371,25 @@ export default function HomePage() {
                 profile?.company.seq != null && company.seq === profile.company.seq;
 
               return (
-                <li
-                  key={key}
-                  {...rest}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <div className="flex min-w-0 flex-col">
-                    <span className="truncate font-medium text-[#0f172a]">
-                      <HighlightedText text={company.name} query={safeSearchQuery} />
+                <li key={key} {...rest}>
+                  <span className="font-medium text-[#0f172a]">
+                    <HighlightedText text={company.name} query={safeSearchQuery} />
+                  </span>
+                  {company.industry_name && (
+                    <span className="ml-2 text-xs text-[#94a3b8]">
+                      {company.industry_name}
                     </span>
-                    <span className="text-xs text-[#94a3b8]">
-                      {[
-                        company.industry_name,
-                        company.employee_count != null
-                          ? `${company.employee_count.toLocaleString()}명`
-                          : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
+                  )}
+                  {company.employee_count != null && (
+                    <span className="ml-1 text-xs text-[#94a3b8]">
+                      · {company.employee_count.toLocaleString()}명
                     </span>
-                  </div>
-                  <Chip
-                    label={
-                      isMyCompany
-                        ? "내 회사"
-                        : inCompare
-                        ? "✓ 선택됨"
-                        : "+ 비교 추가"
-                    }
-                    size="small"
-                    color={inCompare ? "primary" : "default"}
-                    variant={inCompare ? "filled" : "outlined"}
-                  />
+                  )}
+                  {(isMyCompany || inCompare) && (
+                    <span className="ml-2 text-xs text-[#3b82f6]">
+                      {isMyCompany ? "내 회사" : "선택됨"}
+                    </span>
+                  )}
                 </li>
               );
             }}
@@ -424,6 +443,7 @@ export default function HomePage() {
               size="small"
               onClick={goCompare}
               disabled={compareList.length !== 2}
+              sx={{ color: "#fff" }}
             >
               이직 추천도 비교하기
             </Button>
