@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -90,7 +90,7 @@ function isSameProfile(a: UserProfile | null, b: UserProfile | null): boolean {
   );
 }
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dropdownAbortRef = useRef<AbortController | null>(null);
@@ -584,5 +584,13 @@ export default function HomePage() {
         </section>
       )}
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="flex flex-col gap-8" />}>
+      <HomePageContent />
+    </Suspense>
   );
 }
