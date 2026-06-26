@@ -1,6 +1,22 @@
 import type { CompanyBasic, HealthScore, CompareResult, CompareRequest } from './types'
 
-const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8100').replace(/\/$/, '')
+function resolveBaseUrl(): string {
+  const envValue = process.env.NEXT_PUBLIC_API_URL?.trim()
+  if (envValue && /^https?:\/\//.test(envValue)) {
+    return envValue.replace(/\/$/, '')
+  }
+
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8100'
+    }
+  }
+
+  return (envValue || 'http://localhost:8100').replace(/\/$/, '')
+}
+
+const BASE_URL = resolveBaseUrl()
 
 async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {

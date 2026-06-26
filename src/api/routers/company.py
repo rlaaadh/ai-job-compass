@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import func, or_
+from sqlalchemy import func
 
 from src.api.deps import (
     build_health_response,
@@ -24,6 +24,30 @@ _SEARCH_CACHE_TTL_SECONDS = 60
 _search_cache: dict[tuple[str, int], tuple[float, list[CompanyBasicResponse]]] = {}
 
 
+def _ordered_company_query(session):
+    return session.query(Company).order_by(
+        Company.search_rank.desc(),
+        func.coalesce(Company.employee_count, 0).desc(),
+        Company.name.asc(),
+    )
+
+
+def _merge_company_rows(
+    collected: list[CompanyBasicResponse],
+    seen_seqs: set[int],
+    companies: list[Company],
+    rows: int,
+) -> list[CompanyBasicResponse]:
+    for company in companies:
+        if company.seq in seen_seqs:
+            continue
+        seen_seqs.add(company.seq)
+        collected.append(company_to_basic(company))
+        if len(collected) >= rows:
+            break
+    return collected
+
+
 def _search_companies_from_db(name: str, rows: int) -> list[CompanyBasicResponse]:
     normalized_query = normalize_company_name(name)
     if not normalized_query:
@@ -31,53 +55,60 @@ def _search_companies_from_db(name: str, rows: int) -> list[CompanyBasicResponse
 
     session = get_session()
     try:
-        alias_seq_query = (
-            session.query(CompanySearchAlias.seq)
+        results: list[CompanyBasicResponse] = []
+        seen_seqs: set[int] = set()
+        fetch_limit = max(rows * 3, rows)
+
+        prefix_name_matches = (
+            _ordered_company_query(session)
+            .filter(Company.normalized_name.like(f"{normalized_query}%"))
+            .limit(fetch_limit)
+            .all()
+        )
+        _merge_company_rows(results, seen_seqs, prefix_name_matches, rows)
+        if len(results) >= rows:
+            return results
+
+        initials_matches = (
+            _ordered_company_query(session)
+            .filter(Company.name_initials.like(f"{normalized_query}%"))
+            .limit(fetch_limit)
+            .all()
+        )
+        _merge_company_rows(results, seen_seqs, initials_matches, rows)
+        if len(results) >= rows:
+            return results
+
+        alias_prefix_matches = (
+            _ordered_company_query(session)
+            .join(CompanySearchAlias, CompanySearchAlias.seq == Company.seq)
             .filter(CompanySearchAlias.normalized_alias_text.like(f"{normalized_query}%"))
+            .limit(fetch_limit)
+            .all()
         )
+        _merge_company_rows(results, seen_seqs, alias_prefix_matches, rows)
+        if results:
+            return results[:rows]
 
-        base_query = (
-            session.query(Company)
-            .filter(
-                or_(
-                    Company.normalized_name.like(f"{normalized_query}%"),
-                    Company.name_initials.like(f"{normalized_query}%"),
-                    Company.seq.in_(alias_seq_query),
-                )
-            )
-            .order_by(
-                Company.search_rank.desc(),
-                func.coalesce(Company.employee_count, 0).desc(),
-                Company.name.asc(),
-            )
-            .limit(rows)
+        contains_name_matches = (
+            _ordered_company_query(session)
+            .filter(Company.normalized_name.like(f"%{normalized_query}%"))
+            .limit(fetch_limit)
+            .all()
         )
+        _merge_company_rows(results, seen_seqs, contains_name_matches, rows)
+        if len(results) >= rows:
+            return results[:rows]
 
-        companies = [company_to_basic(company) for company in base_query.all()]
-        if companies:
-            return companies
-
-        alias_contains_query = (
-            session.query(CompanySearchAlias.seq)
+        alias_contains_matches = (
+            _ordered_company_query(session)
+            .join(CompanySearchAlias, CompanySearchAlias.seq == Company.seq)
             .filter(CompanySearchAlias.normalized_alias_text.like(f"%{normalized_query}%"))
+            .limit(fetch_limit)
+            .all()
         )
-
-        fallback_query = (
-            session.query(Company)
-            .filter(
-                or_(
-                    Company.normalized_name.like(f"%{normalized_query}%"),
-                    Company.seq.in_(alias_contains_query),
-                )
-            )
-            .order_by(
-                Company.search_rank.desc(),
-                func.coalesce(Company.employee_count, 0).desc(),
-                Company.name.asc(),
-            )
-            .limit(rows)
-        )
-        return [company_to_basic(company) for company in fallback_query.all()]
+        _merge_company_rows(results, seen_seqs, alias_contains_matches, rows)
+        return results[:rows]
     finally:
         session.close()
 
@@ -97,7 +128,7 @@ def _search_companies_from_nps(name: str, rows: int) -> list[CompanyBasicRespons
 
 
 @router.get("/search", response_model=list[CompanyBasicResponse])
-async def search_companies(
+def search_companies(
     name: str,
     rows: int = 10,
     fallback: bool = True,
@@ -130,7 +161,7 @@ async def search_companies(
 
 
 @router.get("/{seq}/health", response_model=HealthScoreResponse)
-async def get_company_health(seq: int) -> HealthScoreResponse:
+def get_company_health(seq: int) -> HealthScoreResponse:
     """단일 기업의 건강도 점수 + AI 리포트를 반환한다."""
     client = NPSClient()
     try:

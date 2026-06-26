@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from functools import lru_cache
 from importlib.util import find_spec
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -26,6 +27,7 @@ class Company(Base):
     __table_args__ = (
         Index("idx_companies_name", "name"),
         Index("idx_companies_normalized_name", "normalized_name"),
+        Index("idx_companies_name_initials", "name_initials"),
         Index("idx_companies_employee_count", "employee_count"),
     )
 
@@ -137,9 +139,11 @@ def resolve_database_url(db_path: str | Path = _DEFAULT_DB_PATH) -> str:
     return f"sqlite:///{sqlite_path}"
 
 
-def get_engine(db_path: str | Path = _DEFAULT_DB_PATH):
-    url = resolve_database_url(db_path)
+@lru_cache(maxsize=4)
+def _build_engine(url: str):
     connect_args = {}
+    engine_kwargs = {"echo": False, "connect_args": connect_args}
+
     if url.startswith("postgresql+psycopg://"):
         if find_spec("psycopg") is None:
             raise RuntimeError(
@@ -148,7 +152,20 @@ def get_engine(db_path: str | Path = _DEFAULT_DB_PATH):
             )
         # Supabase pooler(pgbouncer) 환경에서는 자동 prepared statement를 끈다.
         connect_args["prepare_threshold"] = None
-    return create_engine(url, echo=False, connect_args=connect_args)
+        engine_kwargs["pool_pre_ping"] = True
+        engine_kwargs["pool_recycle"] = 300
+
+    return create_engine(url, **engine_kwargs)
+
+
+def get_engine(db_path: str | Path = _DEFAULT_DB_PATH):
+    url = resolve_database_url(db_path)
+    return _build_engine(url)
+
+
+@lru_cache(maxsize=4)
+def _build_session_factory(url: str):
+    return sessionmaker(bind=_build_engine(url))
 
 
 def init_db(db_path: str | Path = _DEFAULT_DB_PATH):
@@ -158,5 +175,5 @@ def init_db(db_path: str | Path = _DEFAULT_DB_PATH):
 
 
 def get_session(db_path: str | Path = _DEFAULT_DB_PATH) -> Session:
-    engine = get_engine(db_path)
-    return sessionmaker(bind=engine)()
+    url = resolve_database_url(db_path)
+    return _build_session_factory(url)()

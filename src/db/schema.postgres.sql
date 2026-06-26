@@ -58,6 +58,9 @@ CREATE INDEX IF NOT EXISTS idx_companies_name
 CREATE INDEX IF NOT EXISTS idx_companies_normalized_name
     ON companies(normalized_name);
 
+CREATE INDEX IF NOT EXISTS idx_companies_name_initials
+    ON companies(name_initials);
+
 CREATE INDEX IF NOT EXISTS idx_companies_employee_count
     ON companies(employee_count DESC);
 
