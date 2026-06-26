@@ -28,6 +28,14 @@ function formatChange(changePct: number | null): string {
   return "최근 변동 없음";
 }
 
+function formatAnnualSalary(amount: number | null): string {
+  if (amount == null || amount <= 0) {
+    return "-";
+  }
+
+  return `${Math.round(amount / 10000).toLocaleString()}만원`;
+}
+
 export default function CompanyDetailPage({
   params,
 }: {
@@ -139,7 +147,16 @@ export default function CompanyDetailPage({
             </div>
           </section>
 
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
+              <p className="text-sm font-medium text-[#64748b]">평균연봉</p>
+              <p className="mt-2 text-3xl font-bold text-[#0f172a]">
+                {formatAnnualSalary(health.estimated_annual_salary)}
+              </p>
+              <p className="mt-2 text-xs text-[#94a3b8]">
+                국민연금 고지금액 기준 1인당 추정값
+              </p>
+            </div>
             <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
               <p className="text-sm font-medium text-[#64748b]">현재 직원 수</p>
               <p className="mt-2 text-3xl font-bold text-[#0f172a]">

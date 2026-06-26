@@ -224,15 +224,16 @@ function HomePageContent() {
     };
   }, []);
 
-  async function handleSearch() {
-    const q = safeSearchQuery.trim();
-    if (!q || q.length < 2) return;
-    setShowDropdown(false);
+  async function performSearch(query: string, rows: number) {
+    const q = normalizeQuery(query).trim();
+    if (!q || q.length < 2) {
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
-    setSearchRows(10);
     try {
-      const data = await api.searchCompanies(q, 10);
+      const data = await api.searchCompanies(q, rows);
       setResults(data);
       setSearched(true);
     } catch (e) {
@@ -243,19 +244,22 @@ function HomePageContent() {
     }
   }
 
+  async function handleSearch() {
+    const q = safeSearchQuery.trim();
+    if (!q || q.length < 2) return;
+    setShowDropdown(false);
+    setSearchRows(10);
+    await performSearch(q, 10);
+  }
+
   async function handleLoadMore() {
     const newRows = searchRows + 10;
     setSearchRows(newRows);
-    setIsLoading(true);
-    setError(null);
     try {
-      const data = await api.searchCompanies(safeSearchQuery.trim(), newRows);
-      setResults(data);
+      await performSearch(safeSearchQuery.trim(), newRows);
     } catch (e) {
       setError(e instanceof Error ? e.message : "더보기에 실패했습니다.");
       setSearchRows(searchRows);
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -291,10 +295,13 @@ function HomePageContent() {
     });
   }
 
-  function handleDropdownSelect(company: CompanyBasic) {
+  async function handleDropdownSelect(company: CompanyBasic) {
     setShowDropdown(false);
-    setSearchQuery(normalizeQuery(company.name));
+    const nextQuery = normalizeQuery(company.name);
+    setSearchQuery(nextQuery);
+    setSearchRows(10);
     toggleCompare(company);
+    await performSearch(nextQuery, 10);
   }
 
   function addMyCompany() {

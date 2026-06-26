@@ -20,6 +20,7 @@ from src.api.schemas import (
 )
 from src.db.models import Company, CompanyMonthlyStats
 from src.pipeline.nps_client import NPSClient
+from src.scoring.recommendation import _estimate_annual_salary_signal
 from src.scoring.schemas import HealthScoreResult
 
 _BUNDLE_CACHE_TTL_SECONDS = 300
@@ -165,6 +166,7 @@ def build_health_response(
     return HealthScoreResponse(
         seq=company.seq,
         name=company.name,
+        estimated_annual_salary=_estimate_annual_salary_signal(company) or None,
         employee_count=company.employee_count,
         health_score=score.total,
         grade=score.grade,

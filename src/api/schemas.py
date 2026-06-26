@@ -31,6 +31,7 @@ class CompanyReportResponse(BaseModel):
 class HealthScoreResponse(BaseModel):
     seq: int
     name: str
+    estimated_annual_salary: Optional[int] = None
     employee_count: Optional[int] = None
     health_score: int
     grade: str                   # 매우 좋음 / 좋음 / 보통 / 주의 / 위험

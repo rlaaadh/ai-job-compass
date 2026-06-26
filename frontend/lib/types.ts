@@ -26,6 +26,7 @@ export interface MonthlyEmployeeStat {
 export interface HealthScore {
   seq: number
   name: string
+  estimated_annual_salary: number | null
   employee_count: number | null
   health_score: number       // 0-100
   grade: string              // 매우 좋음 / 좋음 / 보통 / 주의 / 위험
