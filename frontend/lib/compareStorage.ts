@@ -46,9 +46,15 @@ export function saveCompareCompanies(companies: CompanyBasic[]): void {
     return;
   }
 
+  const nextValue = JSON.stringify(companies.slice(0, 2));
+  const currentValue = window.localStorage.getItem(COMPARE_STORAGE_KEY);
+  if (currentValue === nextValue) {
+    return;
+  }
+
   window.localStorage.setItem(
     COMPARE_STORAGE_KEY,
-    JSON.stringify(companies.slice(0, 2)),
+    nextValue,
   );
   window.dispatchEvent(new Event(COMPARE_STORAGE_EVENT));
 }

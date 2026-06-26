@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
@@ -10,7 +10,11 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Chip from "@mui/material/Chip";
 import Alert from "@mui/material/Alert";
 import { api } from "@/lib/api";
-import { loadCompareCompanies, saveCompareCompanies } from "@/lib/compareStorage";
+import {
+  COMPARE_STORAGE_EVENT,
+  loadCompareCompanies,
+  saveCompareCompanies,
+} from "@/lib/compareStorage";
 import type { CompanyBasic, UserProfile } from "@/lib/types";
 import CompanyCard from "@/components/CompanyCard";
 import HighlightedText from "@/components/HighlightedText";
@@ -44,11 +48,54 @@ function loadStoredProfile(): UserProfile | null {
   }
 }
 
+function buildCompareListFromStorage(
+  storedProfile: UserProfile | null,
+  storedCompareCompanies: CompanyBasic[],
+): CompanyBasic[] {
+  return storedProfile
+    ? syncCompareListWithProfile(storedProfile.company, storedCompareCompanies)
+    : storedCompareCompanies;
+}
+
+function isSameCompanyList(a: CompanyBasic[], b: CompanyBasic[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  return a.every((company, index) => {
+    const other = b[index];
+    return (
+      other != null &&
+      company.seq === other.seq &&
+      company.name === other.name &&
+      company.employee_count === other.employee_count
+    );
+  });
+}
+
+function isSameProfile(a: UserProfile | null, b: UserProfile | null): boolean {
+  if (a === b) {
+    return true;
+  }
+
+  if (!a || !b) {
+    return false;
+  }
+
+  return (
+    a.company.seq === b.company.seq &&
+    a.company.name === b.company.name &&
+    a.role === b.role &&
+    a.yearsOfExp === b.yearsOfExp
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dropdownAbortRef = useRef<AbortController | null>(null);
-  const hasSyncedCompareListRef = useRef(false);
-
+  const hasHydratedCompareListRef = useRef(false);
+  const shouldPersistCompareListRef = useRef(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,29 +113,75 @@ export default function HomePage() {
   const safeSearchQuery = normalizeQuery(searchQuery);
 
   function updateCompareList(updater: (prev: CompanyBasic[]) => CompanyBasic[]) {
+    shouldPersistCompareListRef.current = true;
     setCompareList((prev) => updater(prev));
   }
 
   useEffect(() => {
-    if (!hasSyncedCompareListRef.current) {
-      hasSyncedCompareListRef.current = true;
+    if (!hasHydratedCompareListRef.current) {
       return;
     }
 
+    if (!shouldPersistCompareListRef.current) {
+      return;
+    }
+
+    shouldPersistCompareListRef.current = false;
     saveCompareCompanies(compareList);
   }, [compareList]);
 
   useEffect(() => {
+    function syncFromStorage() {
+      const storedProfile = loadStoredProfile();
+      const storedCompareCompanies = loadCompareCompanies();
+      const nextCompareList = buildCompareListFromStorage(
+        storedProfile,
+        storedCompareCompanies,
+      );
+
+      setProfile((prev) => (
+        isSameProfile(prev, storedProfile) ? prev : storedProfile
+      ));
+      setCompareList((prev) => (
+        isSameCompanyList(prev, nextCompareList) ? prev : nextCompareList
+      ));
+      hasHydratedCompareListRef.current = true;
+    }
+
+    syncFromStorage();
+    window.addEventListener("storage", syncFromStorage);
+    window.addEventListener("focus", syncFromStorage);
+    window.addEventListener("pageshow", syncFromStorage);
+    window.addEventListener(COMPARE_STORAGE_EVENT, syncFromStorage);
+
+    return () => {
+      window.removeEventListener("storage", syncFromStorage);
+      window.removeEventListener("focus", syncFromStorage);
+      window.removeEventListener("pageshow", syncFromStorage);
+      window.removeEventListener(COMPARE_STORAGE_EVENT, syncFromStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    const compareUpdated = searchParams.get("compareUpdated");
+    if (compareUpdated !== "1") {
+      return;
+    }
+
     const storedProfile = loadStoredProfile();
     const storedCompareCompanies = loadCompareCompanies();
-
-    setProfile(storedProfile);
-    setCompareList(
-      storedProfile
-        ? syncCompareListWithProfile(storedProfile.company, storedCompareCompanies)
-        : storedCompareCompanies,
+    const nextCompareList = buildCompareListFromStorage(
+      storedProfile,
+      storedCompareCompanies,
     );
-  }, []);
+
+    setProfile((prev) => (
+      isSameProfile(prev, storedProfile) ? prev : storedProfile
+    ));
+    setCompareList((prev) => (
+      isSameCompanyList(prev, nextCompareList) ? prev : nextCompareList
+    ));
+  }, [searchParams]);
 
   useEffect(() => {
     const q = safeSearchQuery.trim();
@@ -294,7 +387,7 @@ export default function HomePage() {
 
       {/* 검색 바 + 드롭다운 */}
       <section className="flex flex-col gap-2">
-        <div className="flex gap-2">
+        <div className="flex">
           <Autocomplete
             className="flex-1"
             freeSolo
@@ -352,6 +445,11 @@ export default function HomePage() {
                 fullWidth
                 size="small"
                 placeholder="비교할 회사명을 검색하세요"
+                sx={{
+                  "& .MuiInputBase-root": {
+                    pr: 1.5,
+                  },
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -371,22 +469,22 @@ export default function HomePage() {
                 profile?.company.seq != null && company.seq === profile.company.seq;
 
               return (
-                <li key={key} {...rest}>
-                  <span className="font-medium text-[#0f172a]">
+                <li key={key} {...rest} className={`${rest.className ?? ""} flex items-center gap-2`}>
+                  <span className="min-w-0 flex-1 truncate font-medium text-[#0f172a]">
                     <HighlightedText text={company.name} query={safeSearchQuery} />
                   </span>
                   {company.industry_name && (
-                    <span className="ml-2 text-xs text-[#94a3b8]">
+                    <span className="max-w-[34%] flex-shrink truncate text-xs text-[#94a3b8]">
                       {company.industry_name}
                     </span>
                   )}
                   {company.employee_count != null && (
-                    <span className="ml-1 text-xs text-[#94a3b8]">
+                    <span className="flex-shrink-0 text-xs text-[#94a3b8]">
                       · {company.employee_count.toLocaleString()}명
                     </span>
                   )}
                   {(isMyCompany || inCompare) && (
-                    <span className="ml-2 text-xs text-[#3b82f6]">
+                    <span className="flex-shrink-0 text-xs text-[#3b82f6]">
                       {isMyCompany ? "내 회사" : "선택됨"}
                     </span>
                   )}
@@ -394,15 +492,6 @@ export default function HomePage() {
               );
             }}
           />
-
-          <Button
-            variant="contained"
-            onClick={handleSearch}
-            disabled={isLoading || safeSearchQuery.trim().length < 2}
-            sx={{ flexShrink: 0 }}
-          >
-            {isLoading ? <CircularProgress size={20} color="inherit" /> : "검색"}
-          </Button>
         </div>
 
         {/* 드롭다운 로딩은 InputAdornment로 처리됨 */}

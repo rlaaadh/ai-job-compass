@@ -8,6 +8,7 @@ NPSClient / ReportGenerator는 요청마다 새로 생성한다 (상태 없음).
 """
 from __future__ import annotations
 
+import time
 from typing import Optional
 
 from src.ai.report_generator import ReportGenerator
@@ -20,6 +21,9 @@ from src.api.schemas import (
 from src.db.models import Company, CompanyMonthlyStats
 from src.pipeline.nps_client import NPSClient
 from src.scoring.schemas import HealthScoreResult
+
+_BUNDLE_CACHE_TTL_SECONDS = 300
+_bundle_cache: dict[int, tuple[float, tuple[Company, list[CompanyMonthlyStats]]]] = {}
 
 
 def _int(val) -> int | None:
@@ -89,6 +93,19 @@ def fetch_company_bundle(
     return company, stats
 
 
+def fetch_company_bundle_cached(
+    client: NPSClient, seq: int
+) -> Optional[tuple[Company, list[CompanyMonthlyStats]]]:
+    cached = _bundle_cache.get(seq)
+    if cached and time.time() - cached[0] <= _BUNDLE_CACHE_TTL_SECONDS:
+        return cached[1]
+
+    bundle = fetch_company_bundle(client, seq)
+    if bundle is not None:
+        _bundle_cache[seq] = (time.time(), bundle)
+    return bundle
+
+
 def company_to_basic(company: Company) -> CompanyBasicResponse:
     return CompanyBasicResponse(
         seq=company.seq,
@@ -105,22 +122,24 @@ def build_health_response(
     monthly_stats: list[CompanyMonthlyStats],
     score: HealthScoreResult,
     generator: ReportGenerator,
+    include_ai_report: bool = True,
 ) -> HealthScoreResponse:
     """건강도 점수 + AI 리포트를 묶어 HealthScoreResponse를 만든다.
 
     AI 리포트 생성에 실패해도 ai_report=None으로 두고 점수는 항상 반환한다.
     """
     ai_report: CompanyReportResponse | None = None
-    try:
-        report = generator.generate_company_report(score, company.name)
-        ai_report = CompanyReportResponse(
-            summary=report.summary,
-            growth_comment=report.growth_comment,
-            stability_comment=report.stability_comment,
-            size_comment=report.size_comment,
-        )
-    except Exception:
-        ai_report = None
+    if include_ai_report:
+        try:
+            report = generator.generate_company_report(score, company.name)
+            ai_report = CompanyReportResponse(
+                summary=report.summary,
+                growth_comment=report.growth_comment,
+                stability_comment=report.stability_comment,
+                size_comment=report.size_comment,
+            )
+        except Exception:
+            ai_report = None
 
     normalized_stats = sorted(
         [stat for stat in monthly_stats if stat.year_month],

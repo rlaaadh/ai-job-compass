@@ -42,6 +42,7 @@ export default function CompanyDetailPage({
   const [added, setAdded] = useState(() =>
     loadCompareCompanies().some((company) => company.seq === seqNum),
   );
+  const recentSixMonthStats = health?.monthly_employee_stats.slice(-6) ?? [];
 
   useEffect(() => {
     let active = true;
@@ -78,7 +79,8 @@ export default function CompanyDetailPage({
 
     const storedCompanies = loadCompareCompanies();
     const existing = storedCompanies.filter((company) => company.seq !== nextCompany.seq);
-    saveCompareCompanies([...existing, nextCompany].slice(-2));
+    const nextCompanies = [...existing, nextCompany].slice(-2);
+    saveCompareCompanies(nextCompanies);
     setAdded(true);
   }
 
@@ -137,7 +139,7 @@ export default function CompanyDetailPage({
             </div>
           </section>
 
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
               <p className="text-sm font-medium text-[#64748b]">현재 직원 수</p>
               <p className="mt-2 text-3xl font-bold text-[#0f172a]">
@@ -160,18 +162,9 @@ export default function CompanyDetailPage({
                 {formatChange(health.recent_employee_change_pct)}
               </p>
             </div>
-            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
-              <p className="text-sm font-medium text-[#64748b]">월별 데이터 범위</p>
-              <p className="mt-2 text-3xl font-bold text-[#0f172a]">
-                {health.monthly_employee_stats.length}개월
-              </p>
-              <p className="mt-2 text-xs text-[#94a3b8]">
-                최근 확보된 국민연금 월별 통계 기준
-              </p>
-            </div>
           </section>
 
-          <EmployeeTrendChart stats={health.monthly_employee_stats} />
+          <EmployeeTrendChart stats={recentSixMonthStats} />
 
           <AIReportCard report={health.ai_report} type="company" />
 
@@ -185,7 +178,7 @@ export default function CompanyDetailPage({
             </Button>
             {added && (
               <Link
-                href="/"
+                href="/?compareUpdated=1"
                 className="text-sm text-[#64748b] underline hover:text-[#0f172a]"
               >
                 홈으로 가서 비교할 다른 회사 선택하기

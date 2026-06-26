@@ -17,12 +17,31 @@ function buildCompareHref(companies: CompanyBasic[]): string {
   return `/compare?current=${current.seq}&target=${target.seq}`;
 }
 
+function isSameCompanyList(a: CompanyBasic[], b: CompanyBasic[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  return a.every((company, index) => {
+    const other = b[index];
+    return (
+      other != null &&
+      company.seq === other.seq &&
+      company.name === other.name &&
+      company.employee_count === other.employee_count
+    );
+  });
+}
+
 export default function HeaderNav() {
   const [compareCompanies, setCompareCompanies] = useState<CompanyBasic[]>([]);
 
   useEffect(() => {
     function syncCompareCompanies() {
-      setCompareCompanies(loadCompareCompanies());
+      const nextCompanies = loadCompareCompanies();
+      setCompareCompanies((prev) => (
+        isSameCompanyList(prev, nextCompanies) ? prev : nextCompanies
+      ));
     }
 
     syncCompareCompanies();

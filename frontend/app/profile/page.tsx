@@ -177,21 +177,30 @@ export default function ProfilePage() {
                 required
                 placeholder="회사명 검색 (예: 카카오, 네이버)"
                 size="small"
+                sx={{
+                  "& .MuiInputBase-input": {
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  },
+                }}
               />
             )}
             renderOption={(props, option) => {
               const { key, ...rest } =
                 props as React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
               return (
-                <li key={key} {...rest}>
-                  <span className="font-medium text-[#0f172a]">
+                <li key={key} {...rest} className={`${rest.className ?? ""} flex items-center gap-2`}>
+                  <span className="min-w-0 flex-1 truncate font-medium text-[#0f172a]">
                     <HighlightedText text={option.name} query={companyQuery} />
                   </span>
                   {option.industry_name && (
-                    <span className="ml-2 text-xs text-[#94a3b8]">{option.industry_name}</span>
+                    <span className="max-w-[34%] flex-shrink truncate text-xs text-[#94a3b8]">
+                      {option.industry_name}
+                    </span>
                   )}
                   {option.employee_count != null && (
-                    <span className="ml-1 text-xs text-[#94a3b8]">
+                    <span className="flex-shrink-0 text-xs text-[#94a3b8]">
                       · {option.employee_count.toLocaleString()}명
                     </span>
                   )}
