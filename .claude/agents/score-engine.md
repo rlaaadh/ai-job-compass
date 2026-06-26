@@ -8,18 +8,31 @@ model: opus
 
 국민연금 데이터를 기반으로 기업 건강도(100점 만점)와 이직 추천도를 **순수 룰 기반**으로 계산하는 알고리즘을 구현한다. AI는 이 단계에 관여하지 않는다.
 
+## 데이터 소스
+
+- **NPS (국민연금):** 고용 관련 데이터 — 직원 수, 입퇴사자, 고지금액
+- **DART (OpenDART):** 재무 관련 데이터 — 매출, 이익, 자산, 부채, 자본, 현금흐름
+
+DART 설계 전체는 `docs/dart-api-score-design.html` 참고.
+
+### DART 핵심 테이블
+- `company_financial_accounts`: 계정성 금액 원천 (매출, 자산, 부채, 자본, 영업현금흐름 등)
+- `company_financial_metrics`: 계산된 지표 (`revenue_growth_rate`, `asset_growth_rate`, `operating_margin`, `debt_ratio`, `current_ratio`, `roe`, `roa` 등)
+- `company_dart_profiles`: 기업개황 (상장 여부, 업종, 설립일)
+- `dart_corp_codes`: NPS 회사명 ↔ DART corp_code 매핑 키
+
 ## 점수 설계 기준
 
 ### 기업 건강도 (100점 만점)
-| 항목 | 배점 | 산출 기준 |
-|------|------|----------|
-| 성장성 | 35점 | 직원 수 증가율, 입사자/퇴사자 비율 |
-| 안정성 | 30점 | 이직률, 장기 고용 패턴 |
-| 채용 활성도 | 15점 | 신규 취득자 비율 |
-| 규모 적합성 | 10점 | 조직 규모 변화 패턴 |
-| 연봉 추정 | 10점 | 당월고지금액 기반 — 참고값 (정확한 급여 아님) |
+| 항목 | 배점 | NPS 기반 | DART 추가 |
+|------|------|----------|-----------|
+| 성장성 | 35점 | 직원 수 증가율, 입사자/퇴사자 비율 | 매출액증가율(`revenue_growth_rate`), 총자산증가율(`asset_growth_rate`), 영업이익률(`operating_margin`) |
+| 안정성 | 30점 | 이직률, 장기 고용 패턴 | 자기자본비율(`total_equity / total_assets`), 부채비율(`debt_ratio`), 유동비율(`current_ratio`), 영업현금흐름(`operating_cash_flow`) |
+| 채용 활성도 | 15점 | 신규 취득자 비율 | DART 미반영 (공시 데이터는 채용 민감도 낮음) |
+| 규모 적합성 | 10점 | 조직 규모 변화 패턴 | 매출 규모(`revenue`), 자산 규모(`total_assets`) |
+| 연봉 추정 | 10점 | 당월고지금액 기반 — 참고값 (정확한 급여 아님) | DART 미반영 (직무·연차별 보상 데이터 없음) |
 
-**리스크 패널티:** 탈퇴 사업장 이력, 급격한 인원 감소 시 감점
+**리스크 패널티:** 탈퇴 사업장 이력, 급격한 인원 감소 시 감점; DART 확장 시 자본잠식(`total_equity < 0`), 영업손실 지속, 현금흐름 악화도 감점 가능
 
 ### 이직 추천도
 - 관심 기업 건강도 점수 vs 현재 회사 건강도 점수 차이를 기반으로 계산
@@ -42,7 +55,7 @@ model: opus
 ## 입력/출력 프로토콜
 
 **입력:**
-- data-pipeline 에이전트의 `src/db/models.py` 구조
+- data-pipeline 에이전트의 `src/db/models.py` 구조 (NPS + DART 테이블 포함)
 - 오케스트레이터의 작업 지시
 
 **출력 (다음 에이전트에게 전달):**
