@@ -18,9 +18,9 @@ from src.api.schemas import (
     HealthScoreResponse,
     MonthlyEmployeeStatResponse,
 )
-from src.db.models import Company, CompanyMonthlyStats
+from src.db.models import Company, CompanyMonthlyStats, get_session
 from src.pipeline.nps_client import NPSClient
-from src.scoring.recommendation import _estimate_annual_salary_signal
+from src.scoring.health_score import _estimate_annual_salary_signal
 from src.scoring.schemas import HealthScoreResult
 
 _BUNDLE_CACHE_TTL_SECONDS = 300
@@ -74,6 +74,27 @@ def raw_to_monthly_stats(seq: int, raw_list: list[dict], base_ym: str | None) ->
     return stats
 
 
+def fetch_company_bundle_from_db(
+    seq: int,
+) -> Optional[tuple[Company, list[CompanyMonthlyStats]]]:
+    """DB에 저장된 회사/월별 통계를 우선 조회한다."""
+    session = get_session()
+    try:
+        company = session.get(Company, seq)
+        if company is None:
+            return None
+
+        stats = (
+            session.query(CompanyMonthlyStats)
+            .filter(CompanyMonthlyStats.seq == seq)
+            .order_by(CompanyMonthlyStats.year_month.asc())
+            .all()
+        )
+        return company, stats
+    finally:
+        session.close()
+
+
 def fetch_company_bundle(
     client: NPSClient, seq: int
 ) -> Optional[tuple[Company, list[CompanyMonthlyStats]]]:
@@ -81,6 +102,16 @@ def fetch_company_bundle(
 
     기업을 찾지 못하면 None을 반환한다.
     """
+    db_bundle = fetch_company_bundle_from_db(seq)
+    if db_bundle is not None:
+        company, stats = db_bundle
+        if stats:
+            return company, stats
+
+        base_ym = company.data_created_ym
+        raw_stats = client.get_monthly_stats(seq, year_month=base_ym)
+        return company, raw_to_monthly_stats(seq, raw_stats, base_ym)
+
     detail = client.get_establishment_detail(seq)
     if not detail:
         return None

@@ -4,7 +4,10 @@ import re
 from typing import Iterable, Optional
 
 from src.db.models import Company, CompanyMonthlyStats
-from src.scoring.health_score import calculate_health_score, _safe_int
+from src.scoring.health_score import (
+    _estimate_annual_salary_signal,
+    calculate_health_score,
+)
 from src.scoring.schemas import HealthScoreResult, RecommendationResult
 
 _NON_WORD_RE = re.compile(r"[^0-9a-z가-힣]+")
@@ -74,26 +77,6 @@ def _recommendation_score(diff: int) -> int:
     """점수 차이를 0-100 추천 점수로 변환. 차이 0 → 50점 기준."""
     score = 50 + diff * 2  # +25점 차이면 만점 근처
     return int(round(max(0, min(100, score))))
-
-
-def _estimate_annual_salary_signal(company: Optional[Company]) -> int:
-    """국민연금 고지금액으로 1인당 연봉 참고값을 거칠게 추정한다.
-
-    월 고지금액 / 직원 수 -> 1인당 월 고지금액
-    이를 국민연금 총요율 9%의 참고값으로 보고 월 기준소득을 역산한 뒤 연간 환산한다.
-    실제 연봉과 다를 수 있으므로 비교용 신호로만 사용한다.
-    """
-    if company is None:
-        return 0
-
-    charge = _safe_int(company.monthly_charge_amt)
-    emp = _safe_int(company.employee_count)
-    if charge <= 0 or emp <= 0:
-        return 0
-
-    per_capita_charge = charge / emp
-    estimated_monthly_income = per_capita_charge / 0.09
-    return int(round(estimated_monthly_income * 12))
 
 
 def _salary_diff_score_adjustment(salary_change_signal: int) -> int:

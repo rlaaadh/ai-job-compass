@@ -54,7 +54,7 @@ class TestHealthScoreNormal(unittest.TestCase):
         self.assertTrue(0 <= result.stability <= 35)
         self.assertEqual(result.hiring_activity, 0)
         self.assertTrue(0 <= result.size_fit <= 25)
-        self.assertEqual(result.salary_signal, 0)
+        self.assertTrue(0 <= result.salary_signal <= 10)
         self.assertLessEqual(result.risk_penalty, 0)
         self.assertIn("growth", result.breakdown)
         self.assertEqual(result.breakdown["months_available"], 12)
@@ -72,10 +72,12 @@ class TestHealthScoreNormal(unittest.TestCase):
         )
         self.assertGreater(growing.total, shrinking.total)
 
-    def test_salary_signal_removed_from_health_score_breakdown(self):
+    def test_salary_signal_included_as_reference_breakdown(self):
         company = _make_company(employee_count=100, charge=20_000_000)
         result = calculate_health_score(company, _make_stats(1, 100, 1))
-        self.assertNotIn("salary_signal", result.breakdown)
+        self.assertIn("salary_signal", result.breakdown)
+        self.assertFalse(result.breakdown["salary_signal"]["included_in_total"])
+        self.assertGreater(result.salary_signal, 0)
 
     def test_company_size_score_reflects_employee_scale(self):
         medium_company = _make_company(seq=1, name="중소", employee_count=41)
@@ -91,6 +93,17 @@ class TestHealthScoreNormal(unittest.TestCase):
         )
 
         self.assertGreaterEqual(larger_score.size_fit - medium_score.size_fit, 3)
+
+    def test_salary_signal_does_not_change_total_score(self):
+        base_stats = _make_stats(1, start_count=100, monthly_delta=0, joiners=3, leavers=3)
+        low_salary_company = _make_company(seq=1, employee_count=100, charge=9_000_000)
+        high_salary_company = _make_company(seq=2, employee_count=100, charge=30_000_000)
+
+        low_salary_score = calculate_health_score(low_salary_company, base_stats)
+        high_salary_score = calculate_health_score(high_salary_company, base_stats)
+
+        self.assertNotEqual(low_salary_score.salary_signal, high_salary_score.salary_signal)
+        self.assertEqual(low_salary_score.total, high_salary_score.total)
 
 
 class TestHealthScorePartial(unittest.TestCase):

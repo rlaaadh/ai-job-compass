@@ -255,10 +255,14 @@ function HomePageContent() {
   async function handleLoadMore() {
     const newRows = searchRows + 10;
     setSearchRows(newRows);
+    const q = safeSearchQuery.trim();
+    if (!q || q.length < 2) {
+      return;
+    }
+
     try {
-      await performSearch(safeSearchQuery.trim(), newRows);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "더보기에 실패했습니다.");
+      await performSearch(q, newRows);
+    } catch {
       setSearchRows(searchRows);
     }
   }
@@ -296,7 +300,11 @@ function HomePageContent() {
   }
 
   async function handleDropdownSelect(company: CompanyBasic) {
+    dropdownAbortRef.current?.abort();
+    dropdownAbortRef.current = null;
     setShowDropdown(false);
+    setDropdownResults([]);
+    setIsDropdownLoading(false);
     const nextQuery = normalizeQuery(company.name);
     setSearchQuery(nextQuery);
     setSearchRows(10);

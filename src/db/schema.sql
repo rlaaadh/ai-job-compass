@@ -46,3 +46,77 @@ CREATE TABLE IF NOT EXISTS withdrawn_companies (
 CREATE INDEX IF NOT EXISTS idx_companies_name        ON companies(name);
 CREATE INDEX IF NOT EXISTS idx_monthly_stats_seq_ym  ON company_monthly_stats(seq, year_month);
 CREATE INDEX IF NOT EXISTS idx_withdrawn_name        ON withdrawn_companies(name);
+
+-- ────────────────────────────────────────────
+-- DART (OpenDART) 재무 데이터
+-- 설계 기준: docs/dart-api-score-design.html
+-- ────────────────────────────────────────────
+
+-- NPS 회사명 ↔ DART corp_code 매핑 키
+CREATE TABLE IF NOT EXISTS dart_corp_codes (
+    corp_code   TEXT PRIMARY KEY,  -- DART 고유번호 (8자리)
+    corp_name   TEXT NOT NULL,     -- 회사명
+    stock_code  TEXT,              -- 종목코드 (비상장이면 NULL)
+    modify_date TEXT,              -- 최종 변경일 yyyymmdd
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- companies.seq ↔ dart_corp_codes.corp_code 연결 + 기업개황
+CREATE TABLE IF NOT EXISTS company_dart_profiles (
+    seq         INTEGER PRIMARY KEY,  -- companies.seq FK
+    corp_code   TEXT NOT NULL,        -- dart_corp_codes.corp_code FK
+    stock_code  TEXT,
+    corp_cls    TEXT,                 -- 법인 구분 (Y=유가, K=코스닥, N=비상장 등)
+    induty_code TEXT,                 -- 업종 코드
+    est_dt      TEXT,                 -- 설립일 yyyymmdd
+    acc_mt      TEXT,                 -- 결산월 mm
+    synced_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (seq) REFERENCES companies(seq),
+    FOREIGN KEY (corp_code) REFERENCES dart_corp_codes(corp_code)
+);
+
+-- 핵심 재무 계정 원천 (매출, 이익, 자산, 부채, 자본, 현금흐름)
+CREATE TABLE IF NOT EXISTS company_financial_accounts (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    seq                  INTEGER NOT NULL,   -- companies.seq FK
+    biz_year             TEXT NOT NULL,      -- 사업연도 yyyy
+    reprt_code           TEXT NOT NULL,      -- 보고서 코드 (11011=사업보고서 등)
+    fs_div               TEXT,               -- 재무제표 구분 (CFS=연결, OFS=별도)
+    revenue              BIGINT,             -- 매출액
+    operating_income     BIGINT,             -- 영업이익
+    net_income           BIGINT,             -- 당기순이익
+    total_assets         BIGINT,             -- 자산총계
+    total_liabilities    BIGINT,             -- 부채총계
+    total_equity         BIGINT,             -- 자본총계
+    current_assets       BIGINT,             -- 유동자산
+    current_liabilities  BIGINT,             -- 유동부채
+    operating_cash_flow  BIGINT,             -- 영업활동현금흐름
+    created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (seq) REFERENCES companies(seq),
+    UNIQUE(seq, biz_year, reprt_code, fs_div)
+);
+
+-- 계산된 재무 지표 (성장률, 비율 등)
+CREATE TABLE IF NOT EXISTS company_financial_metrics (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    seq                  INTEGER NOT NULL,   -- companies.seq FK
+    biz_year             TEXT NOT NULL,      -- 사업연도 yyyy
+    reprt_code           TEXT NOT NULL,
+    roe                  REAL,               -- 자기자본이익률 (%)
+    roa                  REAL,               -- 총자산이익률 (%)
+    debt_ratio           REAL,               -- 부채비율 (%)
+    current_ratio        REAL,               -- 유동비율 (%)
+    operating_margin     REAL,               -- 영업이익률 (%)
+    net_margin           REAL,               -- 순이익률 (%)
+    revenue_growth_rate  REAL,               -- 매출액증가율 (%)
+    asset_growth_rate    REAL,               -- 총자산증가율 (%)
+    equity_ratio         REAL,               -- 자기자본비율 (%) = total_equity / total_assets * 100
+    created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (seq) REFERENCES companies(seq),
+    UNIQUE(seq, biz_year, reprt_code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_dart_corp_codes_name       ON dart_corp_codes(corp_name);
+CREATE INDEX IF NOT EXISTS idx_dart_profiles_corp_code    ON company_dart_profiles(corp_code);
+CREATE INDEX IF NOT EXISTS idx_financial_accounts_seq_yr  ON company_financial_accounts(seq, biz_year);
+CREATE INDEX IF NOT EXISTS idx_financial_metrics_seq_yr   ON company_financial_metrics(seq, biz_year);

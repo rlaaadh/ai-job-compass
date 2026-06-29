@@ -252,9 +252,9 @@
           <ul>
             <li>성장성: 매출 성장, 영업이익 성장, 자산 성장, ROE/ROA 개선 등</li>
             <li>안정성: 부채비율, 유동비율, 영업현금흐름, 이자보상력 등</li>
-            <li>채용 활동성: DART보다는 국민연금 데이터 유지</li>
             <li>기업 규모: 직원 수 외에 자산·매출 규모를 함께 반영</li>
-            <li>연봉 추정 신호: DART로 직접 계산하지 않음</li>
+            <li>연봉 추정: 현재 프론트에서는 점수 항목보다 별도 참고 카드로 노출</li>
+            <li>리스크 감점: 급격한 인원 감소, 적자 지속, 자본잠식 가능성을 함께 본다</li>
           </ul>
         </article>
       </div>
@@ -336,14 +336,15 @@
               <td>
                 <strong>성장성</strong>: 매출 증가율, 영업이익 증가율, 순이익 증가율<br />
                 <strong>안정성</strong>: 부채비율, 유동비율, 자본잠식 여부<br />
-                <strong>기업 규모</strong>: 자산·매출 절대 규모
+                <strong>기업 규모</strong>: 자산·매출 절대 규모<br />
+                <strong>리스크 감점</strong>: 적자 누적, 자본잠식 여부 보조
               </td>
               <td>이직각 점수 고도화의 핵심. 실제 저장 우선도 가장 높음</td>
             </tr>
             <tr>
               <td><strong>P0</strong></td>
               <td><strong>단일회사 주요 재무지표 조회</strong></td>
-              <td>수익성, 안정성, 성장성, 활동성 지표를 계산 완료된 형태로 확보</td>
+              <td>수익성, 안정성, 성장성 지표를 계산 완료된 형태로 확보</td>
               <td>
                 <code>biz_year</code><br />
                 <code>reprt_code</code><br />
@@ -429,15 +430,15 @@
       <div class="section-title">점수별 반영안</div>
       <div class="grid three">
         <article class="card">
-          <h3>성장성 35점</h3>
+          <h3>성장성 40점</h3>
           <ul>
-            <li>NPS: 직원 수 증가율, 입사/퇴사 비율 유지</li>
+            <li>NPS: 최근 직원 수 증가율, 최근 6개월 추세 유지</li>
             <li>DART 추가: 매출 성장률, 영업이익 성장률, 자산 성장률</li>
             <li>추천 반영 컬럼: <code>revenue_growth_rate</code>, <code>asset_growth_rate</code>, <code>operating_income</code></li>
           </ul>
         </article>
         <article class="card">
-          <h3>안정성 30점</h3>
+          <h3>안정성 35점</h3>
           <ul>
             <li>NPS: 이직률, 인원 변동성 유지</li>
             <li>DART 추가: 부채비율, 유동비율, ROA, 영업현금흐름</li>
@@ -445,35 +446,35 @@
           </ul>
         </article>
         <article class="card">
-          <h3>채용 활동성 15점</h3>
+          <h3>기업 규모 25점</h3>
           <ul>
-            <li>국민연금 데이터 유지</li>
-            <li>DART는 직접 반영하지 않음</li>
-            <li>이유: 공시 데이터는 채용 시점 민감도와 빈도가 낮음</li>
-          </ul>
-        </article>
-        <article class="card">
-          <h3>기업 규모 10점</h3>
-          <ul>
-            <li>현재: 직원 수 기반 점수</li>
+            <li>현재: 직원 수 기반 점수로 프론트 breakdown에 반영</li>
             <li>DART 추가: 매출 규모, 자산 규모, 자본 규모</li>
             <li>추천 반영 컬럼: <code>revenue</code>, <code>total_assets</code>, <code>total_equity</code></li>
           </ul>
         </article>
         <article class="card">
-          <h3>연봉 추정 신호 10점</h3>
+          <h3>연봉 추정 참고 신호</h3>
           <ul>
             <li>국민연금 고지금액 기반 참고 지표 유지</li>
-            <li>DART는 직접 대체하지 않음</li>
-            <li>이유: DART는 개인 직무·연차별 보상 데이터를 제공하지 않음</li>
+            <li>현재 프론트에서는 건강도 막대 점수 대신 평균연봉 카드로 노출</li>
+            <li>DART는 개인 직무·연차별 보상 데이터를 제공하지 않아 직접 대체하지 않음</li>
           </ul>
         </article>
         <article class="card">
           <h3>리스크 감점</h3>
           <ul>
-            <li>NPS: 급감, 탈퇴 사업장 이력 유지</li>
+            <li>NPS: 최근 직원 수 급감, 3개월 연속 감소, 탈퇴 사업장 이력 유지</li>
             <li>DART 확장 시: 자본잠식, 적자 지속, 현금흐름 악화 감점 가능</li>
             <li>추천 반영 컬럼: <code>net_income</code>, <code>operating_cash_flow</code>, <code>total_equity</code></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>프론트 현재 노출</h3>
+          <ul>
+            <li>건강도 breakdown: 성장성, 안정성, 기업 규모</li>
+            <li>보조 카드: 평균연봉, 현재 직원 수, 최근 직원 변화율</li>
+            <li>따라서 채용 활동성 단독 항목은 현재 문서/화면 기준에서 제외</li>
           </ul>
         </article>
       </div>
@@ -533,7 +534,7 @@
         <article class="step">
           <div class="num">6</div>
           <h3>점수 엔진 반영</h3>
-          <p class="muted">성장성·안정성·기업 규모 항목부터 단계적으로 DART 가중치를 추가한다.</p>
+          <p class="muted">성장성·안정성·기업 규모·리스크 감점 항목부터 단계적으로 DART 가중치를 추가한다.</p>
         </article>
       </div>
     </section>
@@ -544,8 +545,8 @@
         <strong>MVP 조합</strong><br />
         <code>고유번호</code> + <code>기업개황</code> + <code>단일회사 주요계정 조회</code> + <code>단일회사 주요 재무지표 조회</code><br /><br />
         이 조합이면 지금 프로젝트에서 가장 부족한 부분인 <strong>재무 기반 성장성</strong>, <strong>재무 기반 안정성</strong>,
-        <strong>직원 수 외 기업 규모 판단</strong>을 바로 보강할 수 있다. 반대로 <strong>채용 활동성</strong>과
-        <strong>연봉 추정 신호</strong>는 여전히 국민연금 데이터가 핵심이므로 DART로 대체하지 않는 것이 맞다.
+        <strong>직원 수 외 기업 규모 판단</strong>, <strong>리스크 감점 근거</strong>를 바로 보강할 수 있다. 반대로
+        <strong>연봉 추정</strong>은 여전히 국민연금 데이터가 핵심이므로 DART로 대체하지 않는 것이 맞다.
       </div>
       <p class="small">
         공식 참고 화면: OpenDART 개발가이드의 고유번호, 기업개황, 재무정보조회(단일회사 주요계정/주요 재무지표/재무제표/회사간 비교) 기준으로 설계함.

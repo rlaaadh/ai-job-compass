@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 from fastapi import APIRouter, HTTPException
 
@@ -17,10 +18,22 @@ from src.scoring.recommendation import calculate_recommendation
 
 router = APIRouter(prefix="/compare", tags=["comparison"])
 
+_COMPARE_CACHE_TTL_SECONDS = 300
+_compare_cache: dict[tuple[int, int, str], tuple[float, CompareResponse]] = {}
+
 
 @router.post("", response_model=CompareResponse)
 def compare_companies(request: CompareRequest) -> CompareResponse:
     """현재 회사와 관심 회사를 비교해 이직 추천도 + AI 리포트를 반환한다."""
+    cache_key = (
+        request.current_seq,
+        request.target_seq,
+        (request.role or "").strip(),
+    )
+    cached = _compare_cache.get(cache_key)
+    if cached and time.time() - cached[0] <= _COMPARE_CACHE_TTL_SECONDS:
+        return cached[1]
+
     try:
         with ThreadPoolExecutor(max_workers=2) as executor:
             current_future = executor.submit(
@@ -81,7 +94,7 @@ def compare_companies(request: CompareRequest) -> CompareResponse:
     except Exception:
         ai_report = None
 
-    return CompareResponse(
+    response = CompareResponse(
         recommendation_score=rec.score,
         verdict=rec.verdict,
         current=current_resp,
@@ -89,3 +102,5 @@ def compare_companies(request: CompareRequest) -> CompareResponse:
         salary_change_signal=rec.salary_change_signal,
         ai_report=ai_report,
     )
+    _compare_cache[cache_key] = (time.time(), response)
+    return response

@@ -9,6 +9,7 @@ from src.scoring.schemas import HealthScoreResult
 MAX_GROWTH = 40
 MAX_STABILITY = 35
 MAX_SIZE_FIT = 25
+MAX_SALARY_SIGNAL = 10
 
 
 def _clamp(value: float, low: float, high: float) -> int:
@@ -18,6 +19,21 @@ def _clamp(value: float, low: float, high: float) -> int:
 def _safe_int(value: Optional[int]) -> int:
     """None을 0으로 안전 변환."""
     return int(value) if value is not None else 0
+
+
+def _estimate_annual_salary_signal(company: Optional[Company]) -> int:
+    """국민연금 고지금액으로 1인당 연봉 참고값을 거칠게 추정한다."""
+    if company is None:
+        return 0
+
+    charge = _safe_int(company.monthly_charge_amt)
+    emp = _safe_int(company.employee_count)
+    if charge <= 0 or emp <= 0:
+        return 0
+
+    per_capita_charge = charge / emp
+    estimated_monthly_income = per_capita_charge / 0.09
+    return int(round(estimated_monthly_income * 12))
 
 
 def _sorted_stats(
@@ -174,6 +190,35 @@ def score_size_fit(
     return score, detail
 
 
+def score_salary_signal(company: Company) -> tuple[int, dict]:
+    """연봉 추정 참고 신호 (0-10): 총점에는 미반영, 건강도 해석용 보조 지표."""
+    detail: dict = {"max": MAX_SALARY_SIGNAL}
+    estimated_annual_salary = _estimate_annual_salary_signal(company)
+
+    if estimated_annual_salary >= 90_000_000:
+        score = 10
+    elif estimated_annual_salary >= 75_000_000:
+        score = 8
+    elif estimated_annual_salary >= 60_000_000:
+        score = 6
+    elif estimated_annual_salary >= 45_000_000:
+        score = 4
+    elif estimated_annual_salary >= 35_000_000:
+        score = 2
+    elif estimated_annual_salary > 0:
+        score = 1
+    else:
+        score = 0
+
+    detail.update(
+        reason="국민연금 고지금액 기반 1인당 연봉 추정 참고 신호",
+        estimated_annual_salary=estimated_annual_salary or None,
+        included_in_total=False,
+        salary_band_score=score,
+    )
+    return score, detail
+
+
 def score_risk_penalty(stats: Sequence[CompanyMonthlyStats]) -> tuple[int, dict]:
     """리스크 패널티 (<= 0): 최근 3개월 연속 감소 -10, 급격한 감소(>20%) -15."""
     detail: dict = {"reasons": []}
@@ -225,6 +270,7 @@ def calculate_health_score(
     growth, growth_d = score_growth(stats, company)
     stability, stability_d = score_stability(stats)
     size_fit, size_d = score_size_fit(stats, company)
+    salary_signal, salary_d = score_salary_signal(company)
     penalty, penalty_d = score_risk_penalty(stats)
 
     positive_total = growth + stability + size_fit
@@ -236,6 +282,7 @@ def calculate_health_score(
         "growth": growth_d,
         "stability": stability_d,
         "size_fit": size_d,
+        "salary_signal": salary_d,
         "risk_penalty": penalty_d,
         "months_available": len(stats),
         "has_monthly_stats": bool(stats),
@@ -248,7 +295,7 @@ def calculate_health_score(
         stability=stability,
         hiring_activity=0,
         size_fit=size_fit,
-        salary_signal=0,
+        salary_signal=salary_signal,
         risk_penalty=penalty,
         breakdown=breakdown,
         grade=grade,

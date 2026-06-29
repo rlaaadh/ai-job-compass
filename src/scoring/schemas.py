@@ -16,7 +16,7 @@ class HealthScoreResult:
     stability: int                   # 안정성 점수 (0-35)
     hiring_activity: int             # 레거시 호환용 필드 (현재 UI/총점에는 미반영)
     size_fit: int                    # 기업 규모 점수 (0-25, 직원 수 기준)
-    salary_signal: int               # 레거시 호환용 필드 (현재 건강도 총점에는 미반영)
+    salary_signal: int               # 연봉 추정 참고 신호 (0-10, 건강도 총점에는 미반영)
     risk_penalty: int                # 리스크 패널티 (0 이하, 감점)
     breakdown: dict = field(default_factory=dict)  # 각 항목 계산 근거
     grade: str = "보통"              # "매우 좋음"/"좋음"/"보통"/"주의"/"위험"
