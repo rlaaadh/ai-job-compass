@@ -188,11 +188,19 @@ def build_health_response(
     ]
 
     recent_employee_change_pct: float | None = None
-    if len(monthly_employee_stats) >= 2:
-        first = monthly_employee_stats[0].employee_count
-        last = monthly_employee_stats[-1].employee_count
-        if first > 0:
-            recent_employee_change_pct = round(((last - first) / first) * 100, 1)
+    if monthly_employee_stats:
+        latest_stat = monthly_employee_stats[-1]
+        current_employee_count = int(company.employee_count or 0)
+        net_change = latest_stat.new_joiners - latest_stat.leavers
+
+        if current_employee_count > 0:
+            previous_employee_count = current_employee_count - net_change
+            denominator = (
+                previous_employee_count
+                if previous_employee_count > 0
+                else current_employee_count
+            )
+            recent_employee_change_pct = round((net_change / denominator) * 100, 1)
 
     return HealthScoreResponse(
         seq=company.seq,

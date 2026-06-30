@@ -13,19 +13,18 @@ import { gradeColor } from "@/lib/colors";
 import CircleGauge from "@/components/CircleGauge";
 import ScoreBreakdown from "@/components/ScoreBreakdown";
 import AIReportCard from "@/components/AIReportCard";
-import EmployeeTrendChart from "@/components/EmployeeTrendChart";
 
-function formatChange(changePct: number | null): string {
-  if (changePct == null) {
+function formatEmployeeDelta(employeeDelta: number | null): string {
+  if (employeeDelta == null) {
     return "데이터 부족";
   }
-  if (changePct > 0) {
-    return `최근 ${changePct.toFixed(1)}% 증가`;
+  if (employeeDelta > 0) {
+    return `+${employeeDelta.toLocaleString()}명`;
   }
-  if (changePct < 0) {
-    return `최근 ${Math.abs(changePct).toFixed(1)}% 감소`;
+  if (employeeDelta < 0) {
+    return `-${Math.abs(employeeDelta).toLocaleString()}명`;
   }
-  return "최근 변동 없음";
+  return "변동 없음";
 }
 
 function formatAnnualSalary(amount: number | null): string {
@@ -50,7 +49,10 @@ export default function CompanyDetailPage({
   const [added, setAdded] = useState(() =>
     loadCompareCompanies().some((company) => company.seq === seqNum),
   );
-  const recentSixMonthStats = health?.monthly_employee_stats.slice(-6) ?? [];
+  const latestMonthlyStat = health?.monthly_employee_stats.at(-1) ?? null;
+  const recentEmployeeDelta = latestMonthlyStat
+    ? latestMonthlyStat.new_joiners - latestMonthlyStat.leavers
+    : null;
 
   useEffect(() => {
     let active = true;
@@ -169,19 +171,19 @@ export default function CompanyDetailPage({
               </p>
             </div>
             <div className="rounded-xl border border-[#e2e8f0] bg-white p-5">
-              <p className="text-sm font-medium text-[#64748b]">최근 직원 변화율</p>
+              <p className="text-sm font-medium text-[#64748b]">최근 직원 변화</p>
               <p className="mt-2 text-3xl font-bold text-[#0f172a]">
-                {health.recent_employee_change_pct != null
-                  ? `${Math.abs(health.recent_employee_change_pct).toFixed(1)}%`
+                {recentEmployeeDelta != null
+                  ? formatEmployeeDelta(recentEmployeeDelta)
                   : "-"}
               </p>
               <p className="mt-2 text-xs text-[#94a3b8]">
-                {formatChange(health.recent_employee_change_pct)}
+                {latestMonthlyStat
+                  ? `${latestMonthlyStat.year_month} 기준 입사 ${latestMonthlyStat.new_joiners.toLocaleString()}명 / 퇴사 ${latestMonthlyStat.leavers.toLocaleString()}명`
+                  : "데이터 부족"}
               </p>
             </div>
           </section>
-
-          <EmployeeTrendChart stats={recentSixMonthStats} />
 
           <AIReportCard report={health.ai_report} type="company" />
 

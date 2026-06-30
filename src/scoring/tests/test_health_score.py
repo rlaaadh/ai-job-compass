@@ -94,6 +94,15 @@ class TestHealthScoreNormal(unittest.TestCase):
 
         self.assertGreaterEqual(larger_score.size_fit - medium_score.size_fit, 3)
 
+    def test_company_size_score_uses_company_employee_count(self):
+        company = _make_company(seq=1, name="테스트", employee_count=41)
+        stats = _make_stats(1, start_count=900, monthly_delta=0, joiners=2, leavers=2)
+
+        result = calculate_health_score(company, stats)
+
+        self.assertEqual(result.size_fit, 8)
+        self.assertEqual(result.breakdown["size_fit"]["employee_count"], 41)
+
     def test_salary_signal_does_not_change_total_score(self):
         base_stats = _make_stats(1, start_count=100, monthly_delta=0, joiners=3, leavers=3)
         low_salary_company = _make_company(seq=1, employee_count=100, charge=9_000_000)

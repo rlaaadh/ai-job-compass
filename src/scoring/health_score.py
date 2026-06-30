@@ -154,14 +154,10 @@ def score_size_fit(
     stats: Sequence[CompanyMonthlyStats],
     company: Company,
 ) -> tuple[int, dict]:
-    """기업 규모 (0-25): 현재 국민연금 가입 직원 수만 반영."""
+    """기업 규모 (0-25): companies 테이블의 현재 직원 수만 반영."""
     detail: dict = {"max": MAX_SIZE_FIT}
 
-    # 현재 직원 수: 최신 월별 통계 우선, 없으면 Company.employee_count
-    if stats:
-        emp = _safe_int(stats[-1].employee_count)
-    else:
-        emp = _safe_int(company.employee_count)
+    emp = _safe_int(company.employee_count)
 
     if emp >= 1_000:
         score = 25

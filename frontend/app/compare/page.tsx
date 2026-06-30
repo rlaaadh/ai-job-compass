@@ -291,20 +291,6 @@ function CompareContent() {
             <CompanyColumn title="관심 회사" health={result.target} />
           </section>
 
-          <section className="rounded-xl border border-[#dbeafe] bg-[#f8fbff] p-4">
-            <p className="text-sm font-semibold text-[#1d4ed8]">
-              점수 안내
-            </p>
-            <p className="mt-2 text-sm leading-6 text-[#475569]">
-              총점은 성장성(40) + 안정성(35) + 기업 규모(25)로 계산하고,
-              최근 직원 수가 급격히 감소하는 경우에는 리스크를 추가로 감점해요.
-            </p>
-            <p className="mt-1 text-sm leading-6 text-[#64748b]">
-              최근 직원 수 감소나 변동 폭은 성장성과 안정성 판단에 반영되고,
-              기업 규모는 현재 국민연금 가입 직원 수만 기준으로 계산해요.
-            </p>
-          </section>
-
           {/* AI 리포트 */}
           <AIReportCard report={result.ai_report} type="recommendation" />
         </>
